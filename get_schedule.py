@@ -1,28 +1,33 @@
 import json
 import requests
+
 from datetime import datetime, timedelta
 
 
 API_URL = "https://app-api.rameevcollege.ru/api/widget/events-student"
+AUTH_FILE = "auth.json"
+SCHEDULE_FILE = "schedule.json"
 
 
-# Загружаем токен
-with open("auth.json", "r", encoding="utf-8") as f:
-    auth = json.load(f)
+class TokenExpired(Exception):
+    pass
 
-TOKEN = auth["token"]
 
-if not TOKEN.startswith("Bearer "):
-    TOKEN = f"Bearer {TOKEN}"
+def get_token_from_auth():
+    with open(AUTH_FILE, "r", encoding="utf-8") as file:
+        auth = json.load(file)
 
-    
+    token = auth["token"]
 
-print("Токен есть:", bool(TOKEN))
-print("Начинается с Bearer:", TOKEN.startswith("Bearer "))
-print("Длина токена:", len(TOKEN))
+    if not token.startswith("Bearer "):
+        token = f"Bearer {token}"
+
+    return token
 
 
 def get_events():
+    token = get_token_from_auth()
+
     now = datetime.now().astimezone()
 
     start = now.replace(
@@ -41,13 +46,17 @@ def get_events():
             "dateEnd": end.isoformat(timespec="milliseconds"),
         },
         headers={
-            "Authorization": TOKEN,
+            "Authorization": token,
             "Accept": "application/json",
         },
     )
 
     print("HTTP:", response.status_code)
-    print("Ответ сервера:", response.text[:500])
+
+    # Именно 401 означает, что нужно получать новый токен
+    if response.status_code == 401:
+        raise TokenExpired("Токен недействителен или истёк")
+
     response.raise_for_status()
 
     return response.json()
@@ -86,6 +95,7 @@ def format_event(event):
                 lessons.append(lesson["name"])
 
     return {
+        "id": event.get("id"),
         "начало": event.get("dateTimeStart"),
         "тип": props.get("type"),
         "продолжительность": props.get("duration"),
@@ -103,10 +113,10 @@ def save_schedule(events):
         for event in events
     ]
 
-    with open("schedule.json", "w", encoding="utf-8") as f:
+    with open(SCHEDULE_FILE, "w", encoding="utf-8") as file:
         json.dump(
             schedule,
-            f,
+            file,
             ensure_ascii=False,
             indent=4,
         )
@@ -114,11 +124,13 @@ def save_schedule(events):
     return schedule
 
 
-data = get_events()
+def get_schedule():
+    events = get_events()
 
-print(f"Всего событий: {len(data)}")
+    print(f"Всего событий: {len(events)}")
 
-schedule = save_schedule(data)
+    schedule = save_schedule(events)
 
-print(f"Получено событий: {len(data)}")
-print(f"Записано в schedule.json: {len(schedule)}")
+    print(f"Записано в schedule.json: {len(schedule)}")
+
+    return schedule
