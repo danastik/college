@@ -122,7 +122,7 @@ class AddEventDialog(QDialog):
 
         self.subject_edit = QLineEdit()
         self.subject_edit.setPlaceholderText(
-            "Например, консультация по математике"
+            "Например: Встреча с Куратором"
         )
 
         main_layout.addWidget(subject_label)
@@ -139,7 +139,7 @@ class AddEventDialog(QDialog):
         date_label = QLabel("Дата")
 
         self.date_edit = QLineEdit()
-        self.date_edit.setPlaceholderText("19.09.2026")
+        self.date_edit.setPlaceholderText(datetime.now().strftime("%d.%m.%Y"))
 
         date_layout.addWidget(date_label)
         date_layout.addWidget(self.date_edit)
