@@ -35,7 +35,7 @@ def get_events():
         minute=0,
         second=0,
         microsecond=0,
-    )
+    ) -timedelta(days=3)
 
     end = start + timedelta(days=7) - timedelta(milliseconds=1)
 

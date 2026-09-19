@@ -1,3 +1,6 @@
+import ctypes
+from ctypes import wintypes
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
@@ -18,8 +21,11 @@ class AppWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Расписание")
+        self.setWindowTitle("College Notifier")
         self.resize(700, 500)
+
+        # Делаем системную верхнюю панель Windows тёмной
+        self.set_dark_title_bar()
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -61,9 +67,11 @@ class AppWindow(QWidget):
         self.schedule_button.clicked.connect(
             lambda: self.change_page(0)
         )
+
         self.settings_button.clicked.connect(
             lambda: self.change_page(1)
         )
+
         self.logs_button.clicked.connect(
             lambda: self.change_page(2)
         )
@@ -72,6 +80,20 @@ class AppWindow(QWidget):
         main_layout.addWidget(self.stack)
 
         self.change_page(0)
+
+    def set_dark_title_bar(self):
+        hwnd = int(self.winId())
+
+        DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+
+        value = ctypes.c_int(1)
+
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            wintypes.HWND(hwnd),
+            DWMWA_USE_IMMERSIVE_DARK_MODE,
+            ctypes.byref(value),
+            ctypes.sizeof(value),
+        )
 
     def change_page(self, index):
         self.stack.setCurrentIndex(index)
@@ -122,6 +144,72 @@ def run_app():
             background-color: #181818;
             border-radius: 8px;
         }
+
+        /* Карточка занятия */
+
+        QFrame#lessonCard {
+            background-color: #252525;
+            border-radius: 8px;
+        }
+
+        /* Тип занятия: урок */
+
+        QFrame#lesson {
+            background-color: #5dade2;
+            border-radius: 3px;
+        }
+
+        /* Тип занятия: практическая */
+
+        QFrame#practice {
+            background-color: #58b368;
+            border-radius: 3px;
+        }
+
+        /* Тип занятия: особая встреча */
+
+        QFrame#special {
+            background-color: #f1c75b;
+            border-radius: 3px;
+        }
+                      
+        QFrame#scheduleInfo {
+            background-color: #252525;
+            border-radius: 8px;
+        }
+
+        QLabel#nextLesson {
+            color: #aaaaaa;
+        }
+
+        QLabel#nextLesson a {
+            color: #6aa9e8;
+            text-decoration: none;
+        }
+
+        QLabel#nextLesson a:hover {
+            color: white;
+        }
+
+        QPushButton#addButton {
+            background-color: #303030;
+            color: #aaaaaa;
+
+            border: none;
+            border-radius: 8px;
+
+            font-size: 22px;
+            font-weight: bold;
+
+            padding: 0;
+        }
+
+        QPushButton#addButton:hover {
+            background-color: #3a3a3a;
+            color: white;
+        }
+    
+        
     """)
 
     window = AppWindow()

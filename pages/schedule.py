@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QFrame,
     QScrollArea,
+    QPushButton,
 )
 
 
@@ -23,13 +24,23 @@ class LessonCard(QFrame):
             lesson["начало"].replace("Z", "+00:00")
         )
 
-        self.subject = lesson["предмет"]
+        if lesson.get("тип") == "EVENT":
+            self.subject = "Особая встреча"
+        else:
+            self.subject = lesson["предмет"]
 
         self.setObjectName("lessonCard")
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(15, 12, 15, 12)
+        layout.setContentsMargins(10, 12, 15, 12)
         layout.setSpacing(15)
+
+        # Цветной индикатор типа занятия
+        self.type_indicator = QFrame()
+        self.type_indicator.setFixedWidth(6)
+        self.type_indicator.setObjectName(
+            self.get_type_color(lesson)
+        )
 
         # Дата
         self.date_label = QLabel(
@@ -51,6 +62,7 @@ class LessonCard(QFrame):
         self.remaining_label = QLabel()
         self.remaining_label.setObjectName("lessonRemaining")
 
+        layout.addWidget(self.type_indicator)
         layout.addWidget(self.date_label)
         layout.addWidget(self.time_label)
         layout.addWidget(self.subject_label)
@@ -60,6 +72,21 @@ class LessonCard(QFrame):
         layout.addWidget(self.remaining_label)
 
         self.update_remaining()
+
+    @staticmethod
+    def get_type_color(lesson):
+        if lesson.get("тип") == "EVENT":
+            return "special"
+
+        description = lesson.get("описание")
+
+        if description == "Встреча с преподавателем":
+            return "lesson"
+
+        if description == "Работа на платформе":
+            return "practice"
+
+        return "lesson"
 
     def update_remaining(self):
         now = datetime.now(timezone.utc)
@@ -71,7 +98,6 @@ class LessonCard(QFrame):
             self.remaining_label.setText("Урок уже начался")
             return
 
-        # Меньше минуты — показываем секунды
         if total_seconds < 60:
             self.remaining_label.setText(
                 f"Через {total_seconds} сек."
@@ -80,7 +106,6 @@ class LessonCard(QFrame):
 
         total_minutes = total_seconds // 60
 
-        # Меньше часа — показываем минуты
         if total_minutes < 60:
             self.remaining_label.setText(
                 f"Через {total_minutes} мин."
@@ -90,7 +115,6 @@ class LessonCard(QFrame):
         total_hours = total_minutes // 60
         minutes = total_minutes % 60
 
-        # Меньше суток — показываем часы и минуты
         if total_hours < 24:
             if minutes > 0:
                 text = f"Через {total_hours} ч. {minutes} мин."
@@ -100,7 +124,6 @@ class LessonCard(QFrame):
             self.remaining_label.setText(text)
             return
 
-        # 24 часа и больше — показываем дни, часы и минуты
         days = total_hours // 24
         hours = total_hours % 24
 
@@ -125,7 +148,9 @@ class SchedulePage(QWidget):
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(10)
 
+        # Расписание
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
@@ -140,11 +165,61 @@ class SchedulePage(QWidget):
 
         main_layout.addWidget(scroll)
 
+        # Нижняя информационная панель
+        info_frame = QFrame()
+        info_frame.setObjectName("scheduleInfo")
+
+        info_layout = QHBoxLayout(info_frame)
+        info_layout.setContentsMargins(10, 8, 10, 8)
+        info_layout.setSpacing(15)
+
+        # Ближайший урок
+        self.next_lesson_label = QLabel()
+        self.next_lesson_label.setObjectName("nextLesson")
+
+        self.next_lesson_label.setOpenExternalLinks(True)
+        self.next_lesson_label.setTextFormat(Qt.RichText)
+
+        info_layout.addWidget(
+            self.next_lesson_label
+        )
+
+        info_layout.addStretch()
+
+        # Легенда цветов
+        legend = QHBoxLayout()
+        legend.setSpacing(10)
+
+        lesson_legend = QLabel("🔵 Урок")
+        lesson_legend.setObjectName("lessonLegend")
+
+        practice_legend = QLabel("🟢 Практическая")
+        practice_legend.setObjectName("practiceLegend")
+
+        special_legend = QLabel("🟡 Особая встреча")
+        special_legend.setObjectName("specialLegend")
+
+        legend.addWidget(lesson_legend)
+        legend.addWidget(practice_legend)
+        legend.addWidget(special_legend)
+
+        info_layout.addLayout(legend)
+
+        # Кнопка +
+        self.add_button = QPushButton("+")
+        self.add_button.setObjectName("addButton")
+        self.add_button.setFixedSize(36, 36)
+        self.add_button.setCursor(Qt.PointingHandCursor)
+
+        info_layout.addWidget(self.add_button)
+
+        main_layout.addWidget(info_frame)
+
         self.load_schedule()
 
-        # Обновляем обратный отсчёт каждую секунду
+        # Обновляем расписание каждую секунду
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_remaining)
+        self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
 
     def load_schedule(self):
@@ -166,11 +241,103 @@ class SchedulePage(QWidget):
         for lesson in schedule:
             card = LessonCard(lesson)
 
+            # Сохраняем ссылку на исходные данные
+            card.lesson_data = lesson
+
             self.cards.append(card)
             self.content_layout.addWidget(card)
 
         self.content_layout.addStretch()
 
-    def update_remaining(self):
+        self.update_schedule()
+
+    def update_next_lesson(self):
+        now = datetime.now(timezone.utc)
+
+        closest_card = None
+        closest_difference = None
+
+        for card in self.cards:
+            difference = (
+                card.start_time - now
+            ).total_seconds()
+
+            # Только будущие занятия
+            # и только те, что начнутся в ближайшие 15 минут
+            if 0 < difference <= 15 * 60:
+
+                if (
+                    closest_difference is None
+                    or difference < closest_difference
+                ):
+                    closest_card = card
+                    closest_difference = difference
+
+        if closest_card is None:
+            self.next_lesson_label.setText(
+                "В ближайшие 15 минут занятий нет"
+            )
+            return
+
+        lesson = closest_card.lesson_data
+
+        subject = closest_card.subject
+        start_time = closest_card.start_time.astimezone().strftime(
+            "%H:%M"
+        )
+
+        link = lesson.get("ссылка")
+
+        if link:
+            text = (
+                f'Следующий урок: '
+                f'<a href="{link}">'
+                f'{subject} ({start_time})'
+                f'</a>'
+            )
+        else:
+            text = (
+                f"Следующий урок: "
+                f"{subject} ({start_time})"
+            )
+
+        self.next_lesson_label.setText(text)
+
+    def update_schedule(self):
+        now = datetime.now(timezone.utc)
+
+        # Находим последний начавшийся урок
+        current_card = None
+
+        for card in self.cards:
+            if card.start_time <= now:
+                if (
+                    current_card is None
+                    or card.start_time > current_card.start_time
+                ):
+                    current_card = card
+
+        # Обновляем карточки
         for card in self.cards:
             card.update_remaining()
+
+            # Если урок уже начался
+            if card.start_time <= now:
+
+                # Сколько времени прошло с его начала
+                elapsed = now - card.start_time
+
+                # Если прошло больше часа — скрываем
+                if elapsed.total_seconds() > 60 * 60:
+                    card.setVisible(False)
+
+                # Иначе показываем только последний начавшийся урок
+                else:
+                    card.setVisible(card is current_card)
+
+            else:
+                # Будущие уроки всегда показываем
+                card.setVisible(True)
+
+        # Обновляем нижнюю информацию
+        self.update_next_lesson()
