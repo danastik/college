@@ -8,7 +8,7 @@ INTERVAL = 60
 RETRY_INTERVAL = 10
 
 
-def run_schedule_cycle():
+def run_schedule_cycle(on_schedule_updated=None):
     print("Запуск мониторинга расписания...")
 
     while True:
@@ -16,6 +16,9 @@ def run_schedule_cycle():
             print("\nПолучаем расписание...")
 
             get_schedule()
+
+            if on_schedule_updated:
+                on_schedule_updated()
 
             print(f"Следующая проверка через {INTERVAL} секунд.")
             time.sleep(INTERVAL)

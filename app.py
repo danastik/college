@@ -1,7 +1,7 @@
 import ctypes
 from ctypes import wintypes
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -17,11 +17,15 @@ from pages.settings import SettingsPage
 from pages.logs import LogsPage
 
 
+class ScheduleUpdateNotifier(QObject):
+    updated = Signal()
+
+
 class AppWindow(QWidget):
-    def __init__(self):
+    def __init__(self, notifier=None):
         super().__init__()
 
-        self.setWindowTitle("College Notifier")
+        self.setWindowTitle("College Helper")
         self.resize(700, 500)
 
         # Делаем системную верхнюю панель Windows тёмной
@@ -60,6 +64,11 @@ class AppWindow(QWidget):
         self.settings_page = SettingsPage()
         self.logs_page = LogsPage()
 
+        if notifier is not None:
+            notifier.updated.connect(
+                self.schedule_page.reload_schedule
+            )
+
         self.stack.addWidget(self.schedule_page)
         self.stack.addWidget(self.settings_page)
         self.stack.addWidget(self.logs_page)
@@ -67,11 +76,9 @@ class AppWindow(QWidget):
         self.schedule_button.clicked.connect(
             lambda: self.change_page(0)
         )
-
         self.settings_button.clicked.connect(
             lambda: self.change_page(1)
         )
-
         self.logs_button.clicked.connect(
             lambda: self.change_page(2)
         )
@@ -92,7 +99,7 @@ class AppWindow(QWidget):
             wintypes.HWND(hwnd),
             DWMWA_USE_IMMERSIVE_DARK_MODE,
             ctypes.byref(value),
-            ctypes.sizeof(value),
+            ctypes.sizeof(value)
         )
 
     def change_page(self, index):
@@ -105,7 +112,7 @@ class AppWindow(QWidget):
             button.style().polish(button)
 
 
-def run_app():
+def run_app(notifier=None):
     app = QApplication([])
 
     app.setStyleSheet("""
@@ -219,7 +226,7 @@ def run_app():
         QLabel#specialLegend {
             background-color: #252525;
             border-radius: 6px;
-            padding: 3px 3px;
+            padding: 3px 4px;
         }
 
         QLabel#nextLesson {
@@ -258,7 +265,7 @@ def run_app():
         }
     """)
 
-    window = AppWindow()
+    window = AppWindow(notifier)
     window.show()
 
     app.exec()

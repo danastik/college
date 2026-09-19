@@ -34,7 +34,6 @@ class LessonCard(QFrame):
             lesson["начало"].replace("Z", "+00:00")
         )
 
-        # Длительность занятия в минутах
         self.duration_minutes = lesson.get(
             "продолжительность",
             45,
@@ -207,7 +206,7 @@ class SchedulePage(QWidget):
 
         info_layout = QHBoxLayout(info_frame)
         info_layout.setContentsMargins(10, 8, 10, 8)
-        info_layout.setSpacing(15)
+        info_layout.setSpacing(10)
 
         # Ближайший урок
         self.next_lesson_label = QLabel()
@@ -224,7 +223,7 @@ class SchedulePage(QWidget):
 
         # Легенда цветов
         legend = QHBoxLayout()
-        legend.setSpacing(1)
+        legend.setSpacing(3)
         legend.setContentsMargins(0, 0, 0, 0)
 
         lesson_legend = QLabel("🔵 Урок")
@@ -254,12 +253,28 @@ class SchedulePage(QWidget):
 
         self.load_schedule()
 
-        # Обновляем расписание каждую секунду
+        # Обновляем время каждую секунду
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
 
+    def clear_schedule(self):
+        self.cards.clear()
+
+        while self.content_layout.count():
+            item = self.content_layout.takeAt(0)
+
+            widget = item.widget()
+
+            if widget is not None:
+                widget.deleteLater()
+
+    def reload_schedule(self):
+        self.load_schedule()
+
     def load_schedule(self):
+        self.clear_schedule()
+
         try:
             with open(
                 SCHEDULE_FILE,
@@ -431,11 +446,6 @@ class SchedulePage(QWidget):
         # Обновляем время у всех карточек
         for card in self.cards:
             card.update_remaining()
-
-            # Карточки больше не удаляем.
-            # В том числе все уроки сегодняшнего дня
-            # остаются видимыми.
-
             card.setVisible(True)
 
         # Обновляем жёлтую обводку
