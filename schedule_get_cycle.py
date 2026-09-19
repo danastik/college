@@ -8,7 +8,7 @@ INTERVAL = 60
 RETRY_INTERVAL = 10
 
 
-def main():
+def run_schedule_cycle():
     print("Запуск мониторинга расписания...")
 
     while True:
@@ -40,4 +40,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_schedule_cycle()
