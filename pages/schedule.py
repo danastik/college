@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
@@ -10,10 +11,14 @@ from PySide6.QtWidgets import (
     QFrame,
     QScrollArea,
     QPushButton,
+    QDialog,
 )
+
+from pages.add_event import AddEventDialog
 
 
 SCHEDULE_FILE = "schedule.json"
+MANUAL_EVENTS_FILE = "manual_events.json"
 
 DAYS = [
     "Понедельник",
@@ -94,7 +99,7 @@ class LessonCard(QFrame):
         if description == "Работа на платформе":
             return "practice"
 
-        return "lesson"
+        return "special"
 
     def update_remaining(self):
         now = datetime.now(timezone.utc)
@@ -247,6 +252,10 @@ class SchedulePage(QWidget):
         self.add_button.setFixedSize(36, 36)
         self.add_button.setCursor(Qt.PointingHandCursor)
 
+        self.add_button.clicked.connect(
+            self.open_add_event_dialog
+        )
+
         info_layout.addWidget(self.add_button)
 
         main_layout.addWidget(info_frame)
@@ -257,6 +266,58 @@ class SchedulePage(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
+
+    def open_add_event_dialog(self):
+        dialog = AddEventDialog(self)
+
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        event = dialog.get_event()
+
+        if not event["предмет"]:
+            return
+
+        event["id"] = f"manual_{uuid4().hex}"
+
+        try:
+            with open(
+                MANUAL_EVENTS_FILE,
+                "r",
+                encoding="utf-8",
+            ) as file:
+                events = json.load(file)
+
+        except (FileNotFoundError, json.JSONDecodeError):
+            events = []
+
+        events.append(event)
+
+        with open(
+            MANUAL_EVENTS_FILE,
+            "w",
+            encoding="utf-8",
+        ) as file:
+            json.dump(
+                events,
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
+        self.reload_schedule()
+
+    def load_manual_events(self):
+        try:
+            with open(
+                MANUAL_EVENTS_FILE,
+                "r",
+                encoding="utf-8",
+            ) as file:
+                return json.load(file)
+
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
     def clear_schedule(self):
         self.cards.clear()
@@ -290,9 +351,26 @@ class SchedulePage(QWidget):
             self.content_layout.addWidget(error_label)
             return
 
+        # Добавляем события, созданные вручную
+        schedule.extend(
+            self.load_manual_events()
+        )
+
+        today = datetime.now().astimezone().date()
+
+        schedule = [
+            lesson
+            for lesson in schedule
+            if datetime.fromisoformat(
+                lesson["начало"].replace("Z", "+00:00")
+            ).astimezone().date() >= today
+        ]
+
         # Сортируем занятия по времени начала
         schedule.sort(
-            key=lambda lesson: lesson["начало"]
+            key=lambda lesson: datetime.fromisoformat(
+                lesson["начало"].replace("Z", "+00:00")
+            ).astimezone(timezone.utc)
         )
 
         current_date = None
@@ -336,37 +414,84 @@ class SchedulePage(QWidget):
     def update_next_lesson(self):
         now = datetime.now(timezone.utc)
 
-        closest_card = None
+        current_card = None
+        next_card = None
         closest_difference = None
 
+        # Сначала ищем текущий урок
+        for card in self.cards:
+            if card.start_time <= now:
+                elapsed_seconds = (
+                    now - card.start_time
+                ).total_seconds()
+
+                if elapsed_seconds < card.duration_minutes * 60:
+                    if (
+                        current_card is None
+                        or card.start_time > current_card.start_time
+                    ):
+                        current_card = card
+
+        # Если сейчас идёт урок — показываем его
+        if current_card is not None:
+            lesson = current_card.lesson_data
+            subject = current_card.subject
+
+            start_time = (
+                current_card.start_time
+                .astimezone()
+                .strftime("%H:%M")
+            )
+
+            link = lesson.get("ссылка")
+
+            if link:
+                text = (
+                    f'<span style="color:#aaaaaa;">'
+                    f"Текущий урок: "
+                    f"</span>"
+                    f'<a href="{link}" '
+                    f'style="color:#e6c65c; '
+                    f'text-decoration:underline;">'
+                    f"{subject} ({start_time})"
+                    f"</a>"
+                )
+            else:
+                text = (
+                    f'<span style="color:#aaaaaa;">'
+                    f"Текущий урок: "
+                    f"{subject} ({start_time})"
+                    f"</span>"
+                )
+
+            self.next_lesson_label.setText(text)
+            return
+
+        # Если текущего урока нет — ищем следующий в ближайшие 15 минут
         for card in self.cards:
             difference = (
                 card.start_time - now
             ).total_seconds()
 
-            # Только будущие занятия
-            # и только те, что начнутся в ближайшие 15 минут
             if 0 < difference <= 15 * 60:
-
                 if (
                     closest_difference is None
                     or difference < closest_difference
                 ):
-                    closest_card = card
+                    next_card = card
                     closest_difference = difference
 
-        if closest_card is None:
+        if next_card is None:
             self.next_lesson_label.setText(
                 "В ближайшие 15 минут занятий нет"
             )
             return
 
-        lesson = closest_card.lesson_data
-
-        subject = closest_card.subject
+        lesson = next_card.lesson_data
+        subject = next_card.subject
 
         start_time = (
-            closest_card.start_time
+            next_card.start_time
             .astimezone()
             .strftime("%H:%M")
         )
@@ -375,15 +500,21 @@ class SchedulePage(QWidget):
 
         if link:
             text = (
+                f'<span style="color:#aaaaaa;">'
                 f"Следующий урок: "
-                f'<a href="{link}">'
+                f"</span>"
+                f'<a href="{link}" '
+                f'style="color:#e6c65c; '
+                f'text-decoration:underline;">'
                 f"{subject} ({start_time})"
                 f"</a>"
             )
         else:
             text = (
+                f'<span style="color:#aaaaaa;">'
                 f"Следующий урок: "
                 f"{subject} ({start_time})"
+                f"</span>"
             )
 
         self.next_lesson_label.setText(text)

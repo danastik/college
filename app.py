@@ -234,12 +234,12 @@ def run_app(notifier=None):
         }
 
         QLabel#nextLesson a {
-            color: #6aa9e8;
+            color: #e6c65c;
             text-decoration: none;
         }
 
         QLabel#nextLesson a:hover {
-            color: white;
+            color: #f0d878;
         }
 
 
