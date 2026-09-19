@@ -15,6 +15,16 @@ from PySide6.QtWidgets import (
 
 SCHEDULE_FILE = "schedule.json"
 
+DAYS = [
+    "Понедельник",
+    "Вторник",
+    "Среда",
+    "Четверг",
+    "Пятница",
+    "Суббота",
+    "Воскресенье",
+]
+
 
 class LessonCard(QFrame):
     def __init__(self, lesson):
@@ -22,6 +32,12 @@ class LessonCard(QFrame):
 
         self.start_time = datetime.fromisoformat(
             lesson["начало"].replace("Z", "+00:00")
+        )
+
+        # Длительность занятия в минутах
+        self.duration_minutes = lesson.get(
+            "продолжительность",
+            45,
         )
 
         if lesson.get("тип") == "EVENT":
@@ -42,12 +58,6 @@ class LessonCard(QFrame):
             self.get_type_color(lesson)
         )
 
-        # Дата
-        self.date_label = QLabel(
-            self.start_time.astimezone().strftime("%d.%m.%Y")
-        )
-        self.date_label.setObjectName("lessonDate")
-
         # Время
         self.time_label = QLabel(
             self.start_time.astimezone().strftime("%H:%M")
@@ -58,12 +68,11 @@ class LessonCard(QFrame):
         self.subject_label = QLabel(self.subject)
         self.subject_label.setObjectName("lessonSubject")
 
-        # Оставшееся время
+        # Оставшееся / прошедшее время
         self.remaining_label = QLabel()
         self.remaining_label.setObjectName("lessonRemaining")
 
         layout.addWidget(self.type_indicator)
-        layout.addWidget(self.date_label)
         layout.addWidget(self.time_label)
         layout.addWidget(self.subject_label)
 
@@ -94,10 +103,31 @@ class LessonCard(QFrame):
         difference = self.start_time - now
         total_seconds = int(difference.total_seconds())
 
+        # Урок уже начался
         if total_seconds <= 0:
-            self.remaining_label.setText("Урок уже начался")
+
+            elapsed_seconds = int(
+                (now - self.start_time).total_seconds()
+            )
+
+            # Урок закончился
+            if elapsed_seconds >= self.duration_minutes * 60:
+                self.remaining_label.setText(
+                    "Урок закончился"
+                )
+                return
+
+            # Урок идёт
+            elapsed_minutes = elapsed_seconds // 60
+
+            self.remaining_label.setText(
+                f"Начался {elapsed_minutes} мин. назад"
+            )
             return
 
+        # Урок ещё не начался
+
+        # Меньше минуты — показываем секунды
         if total_seconds < 60:
             self.remaining_label.setText(
                 f"Через {total_seconds} сек."
@@ -106,6 +136,7 @@ class LessonCard(QFrame):
 
         total_minutes = total_seconds // 60
 
+        # Меньше часа — показываем минуты
         if total_minutes < 60:
             self.remaining_label.setText(
                 f"Через {total_minutes} мин."
@@ -115,15 +146,20 @@ class LessonCard(QFrame):
         total_hours = total_minutes // 60
         minutes = total_minutes % 60
 
+        # Меньше суток — показываем часы и минуты
         if total_hours < 24:
             if minutes > 0:
-                text = f"Через {total_hours} ч. {minutes} мин."
+                text = (
+                    f"Через {total_hours} ч. "
+                    f"{minutes} мин."
+                )
             else:
                 text = f"Через {total_hours} ч."
 
             self.remaining_label.setText(text)
             return
 
+        # 24 часа и больше
         days = total_hours // 24
         hours = total_hours % 24
 
@@ -188,7 +224,8 @@ class SchedulePage(QWidget):
 
         # Легенда цветов
         legend = QHBoxLayout()
-        legend.setSpacing(10)
+        legend.setSpacing(1)
+        legend.setContentsMargins(0, 0, 0, 0)
 
         lesson_legend = QLabel("🔵 Урок")
         lesson_legend.setObjectName("lessonLegend")
@@ -206,7 +243,7 @@ class SchedulePage(QWidget):
         info_layout.addLayout(legend)
 
         # Кнопка +
-        self.add_button = QPushButton("+")
+        self.add_button = QPushButton("➕")
         self.add_button.setObjectName("addButton")
         self.add_button.setFixedSize(36, 36)
         self.add_button.setCursor(Qt.PointingHandCursor)
@@ -238,10 +275,40 @@ class SchedulePage(QWidget):
             self.content_layout.addWidget(error_label)
             return
 
+        # Сортируем занятия по времени начала
+        schedule.sort(
+            key=lambda lesson: lesson["начало"]
+        )
+
+        current_date = None
+
         for lesson in schedule:
+            start_time = datetime.fromisoformat(
+                lesson["начало"].replace("Z", "+00:00")
+            )
+
+            local_date = start_time.astimezone().date()
+
+            # Новый день
+            if local_date != current_date:
+                current_date = local_date
+
+                day_name = DAYS[local_date.weekday()]
+
+                day_label = QLabel(
+                    f"{day_name}, "
+                    f"{local_date.strftime('%d.%m.%Y')}"
+                )
+
+                day_label.setObjectName("dayHeader")
+
+                self.content_layout.addWidget(
+                    day_label
+                )
+
             card = LessonCard(lesson)
 
-            # Сохраняем ссылку на исходные данные
+            # Сохраняем исходные данные
             card.lesson_data = lesson
 
             self.cards.append(card)
@@ -282,18 +349,21 @@ class SchedulePage(QWidget):
         lesson = closest_card.lesson_data
 
         subject = closest_card.subject
-        start_time = closest_card.start_time.astimezone().strftime(
-            "%H:%M"
+
+        start_time = (
+            closest_card.start_time
+            .astimezone()
+            .strftime("%H:%M")
         )
 
         link = lesson.get("ссылка")
 
         if link:
             text = (
-                f'Следующий урок: '
+                f"Следующий урок: "
                 f'<a href="{link}">'
-                f'{subject} ({start_time})'
-                f'</a>'
+                f"{subject} ({start_time})"
+                f"</a>"
             )
         else:
             text = (
@@ -303,41 +373,73 @@ class SchedulePage(QWidget):
 
         self.next_lesson_label.setText(text)
 
-    def update_schedule(self):
+    def update_highlight(self):
         now = datetime.now(timezone.utc)
 
-        # Находим последний начавшийся урок
         current_card = None
+        next_card = None
 
+        # Ищем текущий урок
         for card in self.cards:
             if card.start_time <= now:
-                if (
-                    current_card is None
-                    or card.start_time > current_card.start_time
-                ):
-                    current_card = card
 
-        # Обновляем карточки
+                elapsed_seconds = (
+                    now - card.start_time
+                ).total_seconds()
+
+                if elapsed_seconds < (
+                    card.duration_minutes * 60
+                ):
+                    if (
+                        current_card is None
+                        or card.start_time
+                        > current_card.start_time
+                    ):
+                        current_card = card
+
+        # Если текущего урока нет —
+        # ищем ближайший будущий
+        if current_card is None:
+            for card in self.cards:
+                if card.start_time > now:
+                    if (
+                        next_card is None
+                        or card.start_time
+                        < next_card.start_time
+                    ):
+                        next_card = card
+
+        # Обновляем жёлтую обводку
+        for card in self.cards:
+            should_highlight = (
+                card is current_card
+                or (
+                    current_card is None
+                    and card is next_card
+                )
+            )
+
+            card.setProperty(
+                "highlighted",
+                should_highlight,
+            )
+
+            card.style().unpolish(card)
+            card.style().polish(card)
+
+    def update_schedule(self):
+        # Обновляем время у всех карточек
         for card in self.cards:
             card.update_remaining()
 
-            # Если урок уже начался
-            if card.start_time <= now:
+            # Карточки больше не удаляем.
+            # В том числе все уроки сегодняшнего дня
+            # остаются видимыми.
 
-                # Сколько времени прошло с его начала
-                elapsed = now - card.start_time
+            card.setVisible(True)
 
-                # Если прошло больше часа — скрываем
-                if elapsed.total_seconds() > 60 * 60:
-                    card.setVisible(False)
-
-                # Иначе показываем только последний начавшийся урок
-                else:
-                    card.setVisible(card is current_card)
-
-            else:
-                # Будущие уроки всегда показываем
-                card.setVisible(True)
+        # Обновляем жёлтую обводку
+        self.update_highlight()
 
         # Обновляем нижнюю информацию
         self.update_next_lesson()

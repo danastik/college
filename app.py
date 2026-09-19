@@ -145,12 +145,19 @@ def run_app():
             border-radius: 8px;
         }
 
+
         /* Карточка занятия */
 
         QFrame#lessonCard {
             background-color: #252525;
             border-radius: 8px;
+            border: 1px solid transparent;
         }
+
+        QFrame#lessonCard[highlighted="true"] {
+            border: 1px solid #f1c75b;
+        }
+
 
         /* Тип занятия: урок */
 
@@ -159,6 +166,7 @@ def run_app():
             border-radius: 3px;
         }
 
+
         /* Тип занятия: практическая */
 
         QFrame#practice {
@@ -166,16 +174,52 @@ def run_app():
             border-radius: 3px;
         }
 
+
         /* Тип занятия: особая встреча */
 
         QFrame#special {
             background-color: #f1c75b;
             border-radius: 3px;
         }
-                      
+
+
+        /* Нижняя информационная панель */
+
         QFrame#scheduleInfo {
             background-color: #252525;
             border-radius: 8px;
+        }
+
+
+        /* Тексты в карточке занятия */
+
+        QLabel#lessonTime,
+        QLabel#lessonSubject,
+        QLabel#lessonRemaining {
+            background-color: #252525;
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+
+        /* Заголовок дня */
+
+        QLabel#dayHeader {
+            background-color: #252525;
+            border-radius: 6px;
+            padding: 5px 10px;
+        }
+
+
+        /* Следующий урок и легенда */
+
+        QLabel#nextLesson,
+        QLabel#lessonLegend,
+        QLabel#practiceLegend,
+        QLabel#specialLegend {
+            background-color: #252525;
+            border-radius: 6px;
+            padding: 3px 3px;
         }
 
         QLabel#nextLesson {
@@ -191,6 +235,9 @@ def run_app():
             color: white;
         }
 
+
+        /* Кнопка + */
+
         QPushButton#addButton {
             background-color: #303030;
             color: #aaaaaa;
@@ -201,15 +248,14 @@ def run_app():
             font-size: 22px;
             font-weight: bold;
 
-            padding: 0;
+            padding: 0px;
+            margin: 0px;
         }
 
         QPushButton#addButton:hover {
             background-color: #3a3a3a;
             color: white;
         }
-    
-        
     """)
 
     window = AppWindow()
