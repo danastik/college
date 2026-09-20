@@ -525,6 +525,8 @@ class SchedulePage(QWidget):
                 text = (
                     f'<span style="color:#aaaaaa;">'
                     f"Текущий урок: "
+                    f"</span>"
+                    f'<span style="color:#e6c65c;">'
                     f"{subject} ({start_time})"
                     f"</span>"
                 )
@@ -578,6 +580,8 @@ class SchedulePage(QWidget):
             text = (
                 f'<span style="color:#aaaaaa;">'
                 f"Следующий урок: "
+                f"</span>"
+                f'<span style="color:#e6c65c;">'
                 f"{subject} ({start_time})"
                 f"</span>"
             )

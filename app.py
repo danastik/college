@@ -61,7 +61,7 @@ class AppWindow(QWidget):
         self.stack = QStackedWidget()
 
         self.schedule_page = SchedulePage(settings)
-        self.settings_page = SettingsPage()
+        self.settings_page = SettingsPage(settings)
         self.logs_page = LogsPage()
 
         if notifier is not None:
