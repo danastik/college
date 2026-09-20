@@ -5,8 +5,8 @@
         "practice": true
     },
     "notify_in_advance": [
-        5,
-        10
+        3,
+        5
     ],
     "update_frequency": "60",
     "auto_open_ktalk": false,

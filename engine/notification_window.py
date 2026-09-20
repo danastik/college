@@ -34,11 +34,13 @@ class NotificationWindow(QWidget):
         subject,
         minutes,
         notification_sound,
+        start_notification=False,
     ):
         super().__init__()
 
         self.subject = subject
         self.minutes = minutes
+        self.start_notification = start_notification
         self.notification_sound = notification_sound
 
         self.setFixedSize(
@@ -196,9 +198,14 @@ class NotificationWindow(QWidget):
         )
         layout.addSpacing(0)
 
-        text = QLabel(
-            f"Начнётся через {self.minutes} минут"
-        )
+        if self.start_notification:
+            text = QLabel(
+                "началась!"
+            )
+        else:
+            text = QLabel(
+                f"Начнётся через {self.minutes} минут"
+            )
 
         text.setFont(
             QFont(

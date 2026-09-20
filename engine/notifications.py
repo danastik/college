@@ -21,6 +21,34 @@ class NotificationManager:
 
         self.windows = []
 
+    def _send_start_notification(self, lesson):
+        subject = lesson.get(
+            "предмет",
+            "Занятие",
+        )
+
+        notification_sound = self.settings.get(
+            "notification_sound",
+            "notification1.wav",
+        )
+
+        window = NotificationWindow(
+            subject,
+            0,
+            notification_sound,
+            start_notification=True,
+        )
+
+        self.windows.append(window)
+
+        window.destroyed.connect(
+            lambda: self._remove_window(
+                window
+            )
+        )
+
+        window.show()
+
     def update(
         self,
         lesson_card,
@@ -46,6 +74,22 @@ class NotificationManager:
         )
 
         if notification_type is None:
+            return
+        
+        if seconds_until <= 0:
+            notification_id = (
+                f"{lesson.get('id')}_start"
+            )
+
+            if notification_id not in self.sent_notifications:
+                self.sent_notifications.add(
+                    notification_id
+                )
+
+                self._send_start_notification(
+                    lesson
+                )
+
             return
 
         if not notifications.get(

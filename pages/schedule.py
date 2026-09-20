@@ -286,6 +286,28 @@ class SchedulePage(QWidget):
         self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
 
+    def get_current_lesson(self):
+        now = datetime.now(timezone.utc)
+
+        for card in self.cards:
+            start_time = card.start_time
+
+            duration_minutes = card.duration_minutes
+
+            end_time = (
+                start_time.timestamp()
+                + duration_minutes * 60
+            )
+
+            if (
+                start_time.timestamp()
+                <= now.timestamp()
+                < end_time
+            ):
+                return card
+
+        return None
+
     def clean_manual_events(self):
         try:
             with open(
@@ -677,16 +699,30 @@ class SchedulePage(QWidget):
         self.update_highlight()
         self.update_next_lesson()
 
-        next_lesson = self.get_next_lesson()
+        current_lesson = self.get_current_lesson()
 
-        if next_lesson:
+        if current_lesson:
             now = datetime.now(timezone.utc)
 
             seconds_until = (
-                next_lesson.start_time - now
+                current_lesson.start_time - now
             ).total_seconds()
 
             self.notifications.update(
-                next_lesson,
+                current_lesson,
                 seconds_until,
             )
+        else:
+            next_lesson = self.get_next_lesson()
+
+            if next_lesson:
+                now = datetime.now(timezone.utc)
+
+                seconds_until = (
+                    next_lesson.start_time - now
+                ).total_seconds()
+
+                self.notifications.update(
+                    next_lesson,
+                    seconds_until,
+                )
