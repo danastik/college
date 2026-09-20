@@ -3,7 +3,7 @@ import requests
 
 from datetime import datetime, timedelta
 
-from logger import logger
+from logger import logger as log
 
 
 API_URL = "https://app-api.rameevcollege.ru/api/widget/events-student"
@@ -32,7 +32,7 @@ def get_token_from_auth():
         return token
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to load authentication data: {error}"
         )
         raise
@@ -70,13 +70,13 @@ def get_events():
         )
 
     except requests.RequestException as error:
-        logger.error(
+        log.error(
             f"Schedule request failed: {error}"
         )
         raise
 
-    logger.info(
-        f"Schedule request completed with HTTP {response.status_code}"
+    log.info(
+        f"  Schedule request completed with HTTP {response.status_code}: success"
     )
 
     if response.status_code == 401:
@@ -156,7 +156,7 @@ def save_schedule(events):
             )
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to save schedule: {error}"
         )
         raise
@@ -167,14 +167,14 @@ def save_schedule(events):
 def get_schedule():
     events = get_events()
 
-    logger.info(
-        f"Received {len(events)} schedule events"
+    log.info(
+        f"  Received {len(events)} schedule events"
     )
 
     schedule = save_schedule(events)
 
-    logger.info(
-        f"Schedule saved successfully: {len(schedule)} events"
+    log.info(
+        f"  Schedule saved successfully: {len(schedule)} events"
     )
 
     return schedule

@@ -2,7 +2,7 @@ import json
 
 from playwright.sync_api import sync_playwright, TimeoutError
 
-from logger import logger
+from logger import logger as log
 
 CHROMIUM_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 
@@ -11,7 +11,7 @@ AUTH_FILE = "./data/auth.json"
 
 
 def get_token():
-    logger.info("Starting authentication process")
+    log.info("Starting authentication process")
 
     try:
         with open(
@@ -25,7 +25,7 @@ def get_token():
         password = auth["password"]
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to load authentication credentials: {error}"
         )
         raise
@@ -40,7 +40,7 @@ def get_token():
             page = browser.new_page()
 
             try:
-                logger.info(
+                log.info(
                     "Opening authentication page"
                 )
 
@@ -67,7 +67,7 @@ def get_token():
                     timeout=10000,
                 )
 
-                logger.info(
+                log.info(
                     "Authentication completed successfully"
                 )
 
@@ -98,25 +98,25 @@ def get_token():
                         indent=4,
                     )
 
-                logger.info(
+                log.info(
                     "Authentication token saved successfully"
                 )
 
                 return token
 
             except TimeoutError:
-                logger.warning(
+                log.warning(
                     "Authentication page did not load in time; restarting browser"
                 )
 
             except Exception as error:
-                logger.error(
+                log.error(
                     f"Authentication failed: {error}"
                 )
 
             finally:
                 browser.close()
 
-                logger.info(
+                log.info(
                     "Authentication browser closed"
                 )

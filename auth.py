@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from logger import logger
+from logger import logger as log
 
 
 AUTH_FILE = "./data/auth.json"
@@ -52,7 +52,7 @@ class AuthDialog(QDialog):
         password_input = QLineEdit()
         password_input.setPlaceholderText("Пароль")
         password_input.setEchoMode(
-            QLineEdit.Password
+            QLineEdit.Password    
         )
         password_input.setFixedHeight(42)
 
@@ -152,13 +152,13 @@ class AuthDialog(QDialog):
                     indent=4,
                 )
 
-            logger.info(
+            log.info(
                 "Authentication data saved"
             )
 
             self.accept()
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to save authentication data: {error}"
             )

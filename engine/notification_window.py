@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from logger import logger
+from logger import logger as log
 
 
 class NotificationWindow(QWidget):
@@ -338,13 +338,13 @@ class NotificationWindow(QWidget):
         ).resolve()
 
         if not sound_path.exists():
-            logger.warning(
+            log.warning(
                 f"Notification sound file not found: {sound_path.name}"
             )
             return
 
         try:
-            logger.info(
+            log.info(
                 f"Playing notification sound: {sound_path.name}"
             )
 
@@ -355,6 +355,6 @@ class NotificationWindow(QWidget):
             )
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to play notification sound: {error}"
             )
