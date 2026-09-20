@@ -3,6 +3,8 @@ import requests
 
 from datetime import datetime, timedelta
 
+from logger import logger
+
 
 API_URL = "https://app-api.rameevcollege.ru/api/widget/events-student"
 AUTH_FILE = "./data/auth.json"
@@ -14,15 +16,26 @@ class TokenExpired(Exception):
 
 
 def get_token_from_auth():
-    with open(AUTH_FILE, "r", encoding="utf-8") as file:
-        auth = json.load(file)
+    try:
+        with open(
+            AUTH_FILE,
+            "r",
+            encoding="utf-8",
+        ) as file:
+            auth = json.load(file)
 
-    token = auth["token"]
+        token = auth["token"]
 
-    if not token.startswith("Bearer "):
-        token = f"Bearer {token}"
+        if not token.startswith("Bearer "):
+            token = f"Bearer {token}"
 
-    return token
+        return token
+
+    except Exception as error:
+        logger.error(
+            f"Failed to load authentication data: {error}"
+        )
+        raise
 
 
 def get_events():
@@ -39,23 +52,37 @@ def get_events():
 
     end = start + timedelta(days=7) - timedelta(milliseconds=1)
 
-    response = requests.get(
-        API_URL,
-        params={
-            "dateStart": start.isoformat(timespec="milliseconds"),
-            "dateEnd": end.isoformat(timespec="milliseconds"),
-        },
-        headers={
-            "Authorization": token,
-            "Accept": "application/json",
-        },
+    try:
+        response = requests.get(
+            API_URL,
+            params={
+                "dateStart": start.isoformat(
+                    timespec="milliseconds"
+                ),
+                "dateEnd": end.isoformat(
+                    timespec="milliseconds"
+                ),
+            },
+            headers={
+                "Authorization": token,
+                "Accept": "application/json",
+            },
+        )
+
+    except requests.RequestException as error:
+        logger.error(
+            f"Schedule request failed: {error}"
+        )
+        raise
+
+    logger.info(
+        f"Schedule request completed with HTTP {response.status_code}"
     )
 
-    print("HTTP:", response.status_code)
-
-    # Именно 401 означает, что нужно получать новый токен
     if response.status_code == 401:
-        raise TokenExpired("Токен недействителен или истёк")
+        raise TokenExpired(
+            "Authentication token expired or invalid"
+        )
 
     response.raise_for_status()
 
@@ -101,7 +128,9 @@ def format_event(event):
         "продолжительность": props.get("duration"),
         "предмет": subject,
         "занятия": lessons,
-        "преподаватель": format_teacher(props.get("teacher")),
+        "преподаватель": format_teacher(
+            props.get("teacher")
+        ),
         "описание": props.get("description"),
         "ссылка": props.get("zoomLink"),
     }
@@ -113,13 +142,24 @@ def save_schedule(events):
         for event in events
     ]
 
-    with open(SCHEDULE_FILE, "w", encoding="utf-8") as file:
-        json.dump(
-            schedule,
-            file,
-            ensure_ascii=False,
-            indent=4,
+    try:
+        with open(
+            SCHEDULE_FILE,
+            "w",
+            encoding="utf-8",
+        ) as file:
+            json.dump(
+                schedule,
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
+    except Exception as error:
+        logger.error(
+            f"Failed to save schedule: {error}"
         )
+        raise
 
     return schedule
 
@@ -127,10 +167,14 @@ def save_schedule(events):
 def get_schedule():
     events = get_events()
 
-    print(f"Всего событий: {len(events)}")
+    logger.info(
+        f"Received {len(events)} schedule events"
+    )
 
     schedule = save_schedule(events)
 
-    print(f"Записано в schedule.json: {len(schedule)}")
+    logger.info(
+        f"Schedule saved successfully: {len(schedule)} events"
+    )
 
     return schedule

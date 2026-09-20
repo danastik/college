@@ -1,10 +1,11 @@
 import os
 import json
-from PySide6.QtCore import QObject
 
 from engine.notification_window import (
     NotificationWindow,
 )
+
+from logger import logger
 
 
 class NotificationManager:
@@ -14,13 +15,19 @@ class NotificationManager:
         self.windows = []
 
         self.settings_mtime = None
+
         self.settings = settings
         self.sent_notifications = set()
 
         self.windows = []
 
-    def update(self, lesson_card, seconds_until):
+    def update(
+        self,
+        lesson_card,
+        seconds_until,
+    ):
         self.load_settings_if_changed()
+
         notifications = self.settings.get(
             "notifications",
             {},
@@ -80,12 +87,13 @@ class NotificationManager:
 
             self.settings_mtime = mtime
 
-            print("Настройки обновлены")
+            logger.info(
+                "Application settings reloaded"
+            )
 
         except Exception as error:
-            print(
-                "Ошибка загрузки settings.json:",
-                error,
+            logger.error(
+                f"Failed to reload application settings: {error}"
             )
 
     def load_settings(self):
@@ -98,9 +106,8 @@ class NotificationManager:
                 self.settings = json.load(file)
 
         except Exception as error:
-            print(
-                "Ошибка загрузки settings.json:",
-                error,
+            logger.error(
+                f"Failed to load application settings: {error}"
             )
 
     @staticmethod
@@ -179,6 +186,12 @@ class NotificationManager:
         subject = lesson.get(
             "предмет",
             "Занятие",
+        )
+
+        logger.info(
+            f"Sending {notification_type} notification "
+            f"for lesson '{subject}' "
+            f"({minutes} minutes in advance)"
         )
 
         window = NotificationWindow(

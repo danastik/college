@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from logger import logger
+
 
 class AddEventDialog(QDialog):
     def __init__(self, parent=None):
@@ -139,7 +141,9 @@ class AddEventDialog(QDialog):
         date_label = QLabel("Дата")
 
         self.date_edit = QLineEdit()
-        self.date_edit.setPlaceholderText(datetime.now().strftime("%d.%m.%Y"))
+        self.date_edit.setPlaceholderText(
+            datetime.now().strftime("%d.%m.%Y")
+        )
 
         date_layout.addWidget(date_label)
         date_layout.addWidget(self.date_edit)
@@ -231,7 +235,7 @@ class AddEventDialog(QDialog):
             "%d.%m.%Y %H:%M",
         ).astimezone()
 
-        return {
+        event = {
             "начало": start_time.isoformat(
                 timespec="milliseconds"
             ),
@@ -243,3 +247,9 @@ class AddEventDialog(QDialog):
             "описание": "Личное событие",
             "ссылка": self.link_edit.text().strip() or None,
         }
+
+        logger.info(
+            "Manual event data prepared successfully"
+        )
+
+        return event

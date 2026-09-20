@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+from logger import logger
+
+
 SETTINGS_FILE = "./data/settings.json"
 
 
@@ -477,6 +480,10 @@ class SettingsPage(QWidget):
             )
         )
 
+        logger.info(
+            "Application settings loaded into settings page"
+        )
+
     def save_settings(self):
         # =========================================================
         # Уведомления
@@ -568,12 +575,11 @@ class SettingsPage(QWidget):
                     indent=4,
                 )
 
-            print(
-                "Настройки сохранены"
+            logger.info(
+                "Application settings saved successfully"
             )
 
         except Exception as error:
-            print(
-                "Ошибка сохранения настроек:",
-                error,
+            logger.error(
+                f"Failed to save application settings: {error}"
             )

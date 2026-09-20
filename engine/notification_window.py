@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from logger import logger
+
 
 class NotificationWindow(QWidget):
     WIDTH = 360
@@ -27,7 +29,12 @@ class NotificationWindow(QWidget):
     MARGIN = 20
     DISPLAY_TIME = 5000
 
-    def __init__(self, subject, minutes, notification_sound):
+    def __init__(
+        self,
+        subject,
+        minutes,
+        notification_sound,
+    ):
         super().__init__()
 
         self.subject = subject
@@ -66,7 +73,6 @@ class NotificationWindow(QWidget):
             if window is self:
                 continue
 
-            # Ищем главное окно приложения
             if window.isWindow() and window.isVisible():
                 window.showNormal()
                 window.raise_()
@@ -325,12 +331,15 @@ class NotificationWindow(QWidget):
         ).resolve()
 
         if not sound_path.exists():
-            print("[SOUND] ФАЙЛ НЕ НАЙДЕН", sound_path)
-            print("=" * 50)
+            logger.warning(
+                f"Notification sound file not found: {sound_path.name}"
+            )
             return
 
         try:
-            print("[SOUND] Размер:", sound_path.stat().st_size, "байт")
+            logger.info(
+                f"Playing notification sound: {sound_path.name}"
+            )
 
             winsound.PlaySound(
                 str(sound_path),
@@ -338,18 +347,7 @@ class NotificationWindow(QWidget):
                 | winsound.SND_ASYNC,
             )
 
-            result = winsound.PlaySound(
-                str(sound_path),
-                winsound.SND_FILENAME
-                | winsound.SND_ASYNC,
-            )
-
-            print("[SOUND] PlaySound результат:", result)
-
         except Exception as error:
-            print(
-                "[SOUND] ОШИБКА:",
-                repr(error),
+            logger.error(
+                f"Failed to play notification sound: {error}"
             )
-
-        print("=" * 50)

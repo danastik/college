@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from pages.schedule import SchedulePage
 from pages.settings import SettingsPage
 from pages.logs import LogsPage
+from logger import logger
 
 
 class ScheduleUpdateNotifier(QObject):
@@ -28,7 +29,6 @@ class AppWindow(QWidget):
         self.setWindowTitle("College Helper")
         self.resize(700, 500)
 
-        # Делаем системную верхнюю панель Windows тёмной
         self.set_dark_title_bar()
 
         main_layout = QVBoxLayout(self)
@@ -88,6 +88,8 @@ class AppWindow(QWidget):
 
         self.change_page(0)
 
+        logger.info("Main window initialized")
+
     def set_dark_title_bar(self):
         hwnd = int(self.winId())
 
@@ -113,6 +115,8 @@ class AppWindow(QWidget):
 
 
 def run_app(notifier=None, settings=None):
+    logger.info("Initializing application interface")
+
     app = QApplication([])
 
     app.setStyleSheet("""
@@ -268,7 +272,11 @@ def run_app(notifier=None, settings=None):
     window = AppWindow(notifier, settings)
     window.show()
 
+    logger.info("Application interface started")
+
     app.exec()
+
+    logger.info("Application closed")
 
 
 if __name__ == "__main__":

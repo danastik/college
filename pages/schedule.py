@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
 
 from pages.add_event import AddEventDialog
 from engine.notifications import NotificationManager
+from logger import logger
+
 
 SCHEDULE_FILE = "./data/schedule.json"
 MANUAL_EVENTS_FILE = "./data/manual_events.json"
@@ -129,7 +131,7 @@ class LessonCard(QFrame):
             )
             return
 
-         # Урок ещё не начался
+        # Урок ещё не начался
 
         # Меньше часа — показываем минуты и секунды
         if total_seconds < 60 * 60:
@@ -318,17 +320,16 @@ class SchedulePage(QWidget):
                         indent=4,
                     )
 
-                print(
-                    f"Удалено старых ручных событий: "
-                    f"{len(events) - len(cleaned_events)}"
+                logger.info(
+                    f"Removed {len(events) - len(cleaned_events)} expired manual events"
                 )
 
         except FileNotFoundError:
             pass
 
         except Exception as error:
-            print(
-                f"Ошибка очистки manual_events.json: {error}"
+            logger.error(
+                f"Failed to clean manual events: {error}"
             )
 
     def open_add_event_dialog(self):
@@ -368,6 +369,10 @@ class SchedulePage(QWidget):
                 ensure_ascii=False,
                 indent=4,
             )
+
+        logger.info(
+            "Manual event added successfully"
+        )
 
         self.reload_schedule()
 
@@ -409,17 +414,30 @@ class SchedulePage(QWidget):
             ) as file:
                 schedule = json.load(file)
 
-        except Exception as e:
+        except Exception as error:
+            logger.error(
+                f"Failed to load schedule: {error}"
+            )
+
             error_label = QLabel(
-                f"Не удалось загрузить расписание:\n{e}"
+                f"Не удалось загрузить расписание:\n{error}"
             )
             self.content_layout.addWidget(error_label)
             return
 
-        # Добавляем события, созданные вручную
-        schedule.extend(
-            self.load_manual_events()
+        logger.info(
+            f"Loaded {len(schedule)} schedule events"
         )
+
+        # Добавляем события, созданные вручную
+        manual_events = self.load_manual_events()
+
+        schedule.extend(manual_events)
+
+        if manual_events:
+            logger.info(
+                f"Loaded {len(manual_events)} manual events"
+            )
 
         today = datetime.now().astimezone().date()
 
