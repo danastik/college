@@ -2,14 +2,11 @@
     "notifications": {
         "enabled": true,
         "lesson": true,
-        "practice": false
+        "practice": true
     },
-    "notify_in_advance": [
-        3,
-        5
-    ],
-    "update_frequency": "60",
+    "notify_in_advance": [],
+    "update_frequency": "30",
     "auto_open_ktalk": true,
     "auto_join_ktalk": false,
-    "notification_sound": "notification1.wav"
+    "notification_sound": "notification2.wav"
 }
