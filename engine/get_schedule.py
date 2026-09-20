@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 
 API_URL = "https://app-api.rameevcollege.ru/api/widget/events-student"
-AUTH_FILE = "auth.json"
-SCHEDULE_FILE = "schedule.json"
+AUTH_FILE = "./data/auth.json"
+SCHEDULE_FILE = "./data/schedule.json"
 
 
 class TokenExpired(Exception):

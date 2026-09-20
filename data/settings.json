@@ -4,9 +4,7 @@
         "lesson": true,
         "practice": true
     },
-    "notify_in_advance": [
-        10, 5
-    ],
+    "notify_in_advance": [1, 2],
     "update_frequency": "60",
     "auto_open_ktalk": true,
     "auto_join_ktalk": true

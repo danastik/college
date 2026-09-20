@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 
 
 TARGET_URL = "https://app.rameevcollege.ru/study/schedule"
-AUTH_FILE = "auth.json"
+AUTH_FILE = "./data/auth.json"
 
 
 def get_token():

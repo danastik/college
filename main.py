@@ -1,10 +1,29 @@
+import json
+import os
 import threading
 
-from schedule_get_cycle import run_schedule_cycle
+from engine.schedule_get_cycle import run_schedule_cycle
 from app import run_app, ScheduleUpdateNotifier
 
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
+SETTINGS_FILE = "./data/settings.json"
+
+
+def load_settings():
+    with open(
+        SETTINGS_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
+        return json.load(file)
+
+
 def main():
+    settings = load_settings()
+
     notifier = ScheduleUpdateNotifier()
 
     schedule_thread = threading.Thread(
@@ -18,7 +37,10 @@ def main():
     print("Основная программа запущена")
     print("Цикл обновления расписания запущен в отдельном потоке")
 
-    run_app(notifier)
+    run_app(
+        notifier,
+        settings,
+    )
 
 
 if __name__ == "__main__":

@@ -15,10 +15,10 @@ from PySide6.QtWidgets import (
 )
 
 from pages.add_event import AddEventDialog
+from engine.notifications import NotificationManager
 
-
-SCHEDULE_FILE = "schedule.json"
-MANUAL_EVENTS_FILE = "manual_events.json"
+SCHEDULE_FILE = "./data/schedule.json"
+MANUAL_EVENTS_FILE = "./data/manual_events.json"
 
 DAYS = [
     "Понедельник",
@@ -129,29 +129,32 @@ class LessonCard(QFrame):
             )
             return
 
-        # Урок ещё не начался
+         # Урок ещё не начался
 
-        # Меньше минуты — показываем секунды
-        if total_seconds < 60:
-            self.remaining_label.setText(
-                f"Через {total_seconds} сек."
-            )
+        # Меньше часа — показываем минуты и секунды
+        if total_seconds < 60 * 60:
+            total_minutes = total_seconds // 60
+            seconds = total_seconds % 60
+
+            if total_minutes > 0:
+                self.remaining_label.setText(
+                    f"Через {total_minutes} мин. "
+                    f"{seconds:02d} сек."
+                )
+            else:
+                self.remaining_label.setText(
+                    f"Через {seconds} сек."
+                )
+
             return
 
         total_minutes = total_seconds // 60
 
-        # Меньше часа — показываем минуты
-        if total_minutes < 60:
-            self.remaining_label.setText(
-                f"Через {total_minutes} мин."
-            )
-            return
-
-        total_hours = total_minutes // 60
-        minutes = total_minutes % 60
-
         # Меньше суток — показываем часы и минуты
-        if total_hours < 24:
+        if total_minutes < 24 * 60:
+            total_hours = total_minutes // 60
+            minutes = total_minutes % 60
+
             if minutes > 0:
                 text = (
                     f"Через {total_hours} ч. "
@@ -163,28 +166,14 @@ class LessonCard(QFrame):
             self.remaining_label.setText(text)
             return
 
-        # 24 часа и больше
-        days = total_hours // 24
-        hours = total_hours % 24
-
-        parts = [f"{days} д."]
-
-        if hours > 0:
-            parts.append(f"{hours} ч.")
-
-        if minutes > 0:
-            parts.append(f"{minutes} мин.")
-
-        self.remaining_label.setText(
-            "Через " + " ".join(parts)
-        )
-
 
 class SchedulePage(QWidget):
-    def __init__(self):
+    def __init__(self, settings):
         super().__init__()
 
         self.cards = []
+
+        self.notifications = NotificationManager(settings)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(15, 15, 15, 15)
@@ -194,6 +183,34 @@ class SchedulePage(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("""
+            QScrollBar:vertical {
+                width: 8px;
+                background: #606060;
+                border-radius: 4px;
+            }
+
+            QScrollBar::handle:vertical {
+                background: #222222;
+                border-radius: 2px;
+                min-height: 30px;
+                margin: 0px 2px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background: #222222;
+            }
+
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+
+            QScrollBar::add-page:vertical,
+            QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+        """)
 
         self.content = QWidget()
 
@@ -267,6 +284,53 @@ class SchedulePage(QWidget):
         self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
 
+    def clean_manual_events(self):
+        try:
+            with open(
+                "manual_events.json",
+                "r",
+                encoding="utf-8",
+            ) as file:
+                events = json.load(file)
+
+            today = datetime.now().date()
+
+            cleaned_events = []
+
+            for event in events:
+                start_time = datetime.fromisoformat(
+                    event["начало"].replace("Z", "+00:00")
+                )
+
+                if start_time.astimezone().date() >= today:
+                    cleaned_events.append(event)
+
+            if len(cleaned_events) != len(events):
+                with open(
+                    "manual_events.json",
+                    "w",
+                    encoding="utf-8",
+                ) as file:
+                    json.dump(
+                        cleaned_events,
+                        file,
+                        ensure_ascii=False,
+                        indent=4,
+                    )
+
+                print(
+                    f"Удалено старых ручных событий: "
+                    f"{len(events) - len(cleaned_events)}"
+                )
+
+        except FileNotFoundError:
+            pass
+
+        except Exception as error:
+            print(
+                f"Ошибка очистки manual_events.json: {error}"
+            )
+
     def open_add_event_dialog(self):
         dialog = AddEventDialog(self)
 
@@ -335,6 +399,7 @@ class SchedulePage(QWidget):
 
     def load_schedule(self):
         self.clear_schedule()
+        self.clean_manual_events()
 
         try:
             with open(
@@ -519,6 +584,15 @@ class SchedulePage(QWidget):
 
         self.next_lesson_label.setText(text)
 
+    def get_next_lesson(self):
+        now = datetime.now(timezone.utc)
+
+        for card in self.cards:
+            if card.start_time > now:
+                return card
+
+        return None
+
     def update_highlight(self):
         now = datetime.now(timezone.utc)
 
@@ -574,13 +648,23 @@ class SchedulePage(QWidget):
             card.style().polish(card)
 
     def update_schedule(self):
-        # Обновляем время у всех карточек
         for card in self.cards:
             card.update_remaining()
             card.setVisible(True)
 
-        # Обновляем жёлтую обводку
         self.update_highlight()
-
-        # Обновляем нижнюю информацию
         self.update_next_lesson()
+
+        next_lesson = self.get_next_lesson()
+
+        if next_lesson:
+            now = datetime.now(timezone.utc)
+
+            seconds_until = (
+                next_lesson.start_time - now
+            ).total_seconds()
+
+            self.notifications.update(
+                next_lesson,
+                seconds_until,
+            )

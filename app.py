@@ -22,7 +22,7 @@ class ScheduleUpdateNotifier(QObject):
 
 
 class AppWindow(QWidget):
-    def __init__(self, notifier=None):
+    def __init__(self, notifier=None, settings=None):
         super().__init__()
 
         self.setWindowTitle("College Helper")
@@ -60,7 +60,7 @@ class AppWindow(QWidget):
 
         self.stack = QStackedWidget()
 
-        self.schedule_page = SchedulePage()
+        self.schedule_page = SchedulePage(settings)
         self.settings_page = SettingsPage()
         self.logs_page = LogsPage()
 
@@ -112,7 +112,7 @@ class AppWindow(QWidget):
             button.style().polish(button)
 
 
-def run_app(notifier=None):
+def run_app(notifier=None, settings=None):
     app = QApplication([])
 
     app.setStyleSheet("""
@@ -265,7 +265,7 @@ def run_app(notifier=None):
         }
     """)
 
-    window = AppWindow(notifier)
+    window = AppWindow(notifier, settings)
     window.show()
 
     app.exec()

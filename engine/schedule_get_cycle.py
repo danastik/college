@@ -1,7 +1,7 @@
 import time
 
-from get_schedule import get_schedule, TokenExpired
-from get_token import get_token
+from engine.get_schedule import get_schedule, TokenExpired
+from engine.get_token import get_token
 
 
 INTERVAL = 60
