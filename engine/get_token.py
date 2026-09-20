@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 
 from logger import logger
 
+CHROMIUM_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 
 TARGET_URL = "https://app.rameevcollege.ru/study/schedule"
 AUTH_FILE = "./data/auth.json"
@@ -32,7 +33,8 @@ def get_token():
     with sync_playwright() as p:
         while True:
             browser = p.chromium.launch(
-                headless=True
+                headless=True,
+                executable_path=CHROMIUM_PATH,
             )
 
             page = browser.new_page()
