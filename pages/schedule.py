@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from pages.add_event import AddEventDialog
 from engine.notifications import NotificationManager
+from engine.open_ktalk import open_ktalk
 from logger import logger
 
 
@@ -174,6 +175,7 @@ class SchedulePage(QWidget):
         super().__init__()
 
         self.cards = []
+        self.started_lessons = set()
 
         self.notifications = NotificationManager(settings)
 
@@ -712,6 +714,14 @@ class SchedulePage(QWidget):
                 current_lesson,
                 seconds_until,
             )
+
+            lesson = current_lesson.lesson_data
+            lesson_id = lesson.get("id")
+
+            if lesson_id not in self.started_lessons:
+                self.started_lessons.add(lesson_id)
+
+                open_ktalk(lesson)
         else:
             next_lesson = self.get_next_lesson()
 

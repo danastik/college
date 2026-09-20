@@ -1,3 +1,4 @@
+import os
 import ctypes
 from ctypes import wintypes
 
@@ -10,8 +11,10 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStackedWidget,
     QSizePolicy,
+    QDialog,
 )
 
+from auth import AuthDialog
 from pages.schedule import SchedulePage
 from pages.settings import SettingsPage
 from pages.logs import LogsPage
@@ -268,6 +271,17 @@ def run_app(notifier=None, settings=None):
             color: white;
         }
     """)
+
+    auth_file = "./data/auth.json"
+
+    if not os.path.exists(auth_file):
+        dialog = AuthDialog()
+
+        if dialog.exec() != QDialog.Accepted:
+            logger.info(
+                "Authentication setup cancelled"
+            )
+            return
 
     window = AppWindow(notifier, settings)
     window.show()

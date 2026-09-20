@@ -69,6 +69,13 @@ class NotificationManager:
 
         lesson = lesson_card.lesson_data
 
+        logger.info(
+            f"Notification debug: "
+            f"type={lesson.get('тип')!r}, "
+            f"description={lesson.get('описание')!r}, "
+            f"subject={lesson.get('предмет')!r}"
+        )
+
         notification_type = self.get_notification_type(
             lesson
         )
@@ -77,6 +84,12 @@ class NotificationManager:
             return
         
         if seconds_until <= 0:
+            if not notifications.get(
+                notification_type,
+                False,
+            ):
+                return
+
             notification_id = (
                 f"{lesson.get('id')}_start"
             )
@@ -156,14 +169,6 @@ class NotificationManager:
 
     @staticmethod
     def get_notification_type(lesson):
-        lesson_type = lesson.get("тип")
-
-        if lesson_type in (
-            "EVENT",
-            "MANUAL_EVENT",
-        ):
-            return "lesson"
-
         description = lesson.get("описание")
 
         if description == "Встреча с преподавателем":
@@ -171,6 +176,14 @@ class NotificationManager:
 
         if description == "Работа на платформе":
             return "practice"
+
+        lesson_type = lesson.get("тип")
+
+        if lesson_type in (
+            "EVENT",
+            "MANUAL_EVENT",
+        ):
+            return "lesson"
 
         return None
 

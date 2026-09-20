@@ -32,7 +32,7 @@ class SettingsPage(QWidget):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
-        # =========================================================
+                # =========================================================
         # Верхняя часть: Уведомления + kTalk
         # =========================================================
 
@@ -65,40 +65,12 @@ class SettingsPage(QWidget):
         )
 
         self.notifications_enabled = QCheckBox(
-            "Уведомления включены"
+            "Уведомления"
         )
 
         self.practice_notifications = QCheckBox(
             "Уведомлять о практике"
         )
-
-        # Уведомлять заранее
-        advance_layout = QHBoxLayout()
-
-        advance_label = QLabel(
-            "Уведомлять за:"
-        )
-
-        self.notify_in_advance = QLineEdit()
-        self.notify_in_advance.setPlaceholderText(
-            "Например: 10, 5"
-        )
-        self.notify_in_advance.setFixedWidth(120)
-
-        minutes_label = QLabel(
-            "мин."
-        )
-
-        advance_layout.addWidget(
-            advance_label
-        )
-        advance_layout.addWidget(
-            self.notify_in_advance
-        )
-        advance_layout.addWidget(
-            minutes_label
-        )
-        advance_layout.addStretch()
 
         notifications_layout.addWidget(
             notifications_title
@@ -108,9 +80,6 @@ class SettingsPage(QWidget):
         )
         notifications_layout.addWidget(
             self.practice_notifications
-        )
-        notifications_layout.addLayout(
-            advance_layout
         )
         notifications_layout.addStretch()
 
@@ -145,12 +114,70 @@ class SettingsPage(QWidget):
             "Автоматически открывать kTalk"
         )
 
-        self.auto_join_ktalk = QCheckBox(
-            "Автоматически подключаться к kTalk"
+        ktalk_layout.addWidget(
+            ktalk_title
+        )
+        ktalk_layout.addWidget(
+            self.auto_open_ktalk
+        )
+        ktalk_layout.addStretch()
+
+        top_layout.addWidget(
+            notifications_frame
+        )
+        top_layout.addWidget(
+            ktalk_frame
         )
 
+        # =========================================================
+        # Дополнительные настройки уведомлений
+        # =========================================================
+
+        notification_options_frame = QFrame()
+        notification_options_frame.setObjectName(
+            "settingsFrame"
+        )
+
+        notification_options_layout = QHBoxLayout(
+            notification_options_frame
+        )
+        notification_options_layout.setContentsMargins(
+            15,
+            15,
+            15,
+            15,
+        )
+        notification_options_layout.setSpacing(15)
+
+        # Уведомлять заранее
+
+        advance_label = QLabel(
+            "Уведомлять за:"
+        )
+
+        self.notify_in_advance = QLineEdit()
+        self.notify_in_advance.setPlaceholderText(
+            "Например: 10, 5"
+        )
+        self.notify_in_advance.setFixedWidth(120)
+
+        minutes_label = QLabel(
+            "мин."
+        )
+
+        notification_options_layout.addWidget(
+            advance_label
+        )
+        notification_options_layout.addWidget(
+            self.notify_in_advance
+        )
+        notification_options_layout.addWidget(
+            minutes_label
+        )
+
+        notification_options_layout.addSpacing(20)
+
         # Звук уведомления
-        sound_layout = QHBoxLayout()
 
         sound_label = QLabel(
             "Звук уведомления:"
@@ -166,34 +193,13 @@ class SettingsPage(QWidget):
             "notification5.wav",
         ])
 
-        sound_layout.addWidget(
+        notification_options_layout.addWidget(
             sound_label
         )
-        sound_layout.addWidget(
+        notification_options_layout.addWidget(
             self.notification_sound
         )
-        sound_layout.addStretch()
-
-        ktalk_layout.addWidget(
-            ktalk_title
-        )
-        ktalk_layout.addWidget(
-            self.auto_open_ktalk
-        )
-        ktalk_layout.addWidget(
-            self.auto_join_ktalk
-        )
-        ktalk_layout.addLayout(
-            sound_layout
-        )
-        ktalk_layout.addStretch()
-
-        top_layout.addWidget(
-            notifications_frame
-        )
-        top_layout.addWidget(
-            ktalk_frame
-        )
+        notification_options_layout.addStretch()
 
         # =========================================================
         # Расписание
@@ -283,6 +289,10 @@ class SettingsPage(QWidget):
 
         main_layout.addLayout(
             top_layout
+        )
+
+        main_layout.addWidget(
+            notification_options_frame
         )
 
         main_layout.addWidget(
@@ -473,12 +483,12 @@ class SettingsPage(QWidget):
             )
         )
 
-        self.auto_join_ktalk.setChecked(
-            self.settings.get(
-                "auto_join_ktalk",
-                True,
-            )
-        )
+        # self.auto_join_ktalk.setChecked(
+        #     self.settings.get(
+        #         "auto_join_ktalk",
+        #         True,
+        #     )
+        # )
 
         logger.info(
             "Application settings loaded into settings page"
@@ -554,9 +564,9 @@ class SettingsPage(QWidget):
             self.auto_open_ktalk.isChecked()
         )
 
-        self.settings["auto_join_ktalk"] = (
-            self.auto_join_ktalk.isChecked()
-        )
+        # self.settings["auto_join_ktalk"] = (
+        #     self.auto_join_ktalk.isChecked()
+        # )
 
         # =========================================================
         # Сохранение settings.json
