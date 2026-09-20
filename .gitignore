@@ -3,3 +3,5 @@ setting.json
 settingы.json
 data/logs/app.log
 .vscode
+__pycache__/
+data/

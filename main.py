@@ -4,7 +4,7 @@ import threading
 
 from engine.schedule_get_cycle import run_schedule_cycle
 from app import run_app, ScheduleUpdateNotifier
-from logger import logger
+from logger import logger as log
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -23,14 +23,14 @@ def load_settings():
 
 
 def main():
-    logger.info("Application started")
+    log.info("--- Application started ---")
 
     try:
         settings = load_settings()
-        logger.info("Settings loaded successfully")
+        log.info("Settings loaded successfully")
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to load settings: {error}"
         )
         raise
@@ -45,7 +45,7 @@ def main():
 
     schedule_thread.start()
 
-    logger.info(
+    log.info(
         "Schedule update thread started"
     )
 

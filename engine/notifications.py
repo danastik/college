@@ -5,7 +5,7 @@ from engine.notification_window import (
     NotificationWindow,
 )
 
-from logger import logger
+from logger import logger as log
 
 
 class NotificationManager:
@@ -49,59 +49,38 @@ class NotificationManager:
 
         window.show()
 
-    def update(
-        self,
-        lesson_card,
-        seconds_until,
-    ):
+    def update(self, lesson_card, seconds_until):
         self.load_settings_if_changed()
 
-        notifications = self.settings.get(
-            "notifications",
-            {},
-        )
+        notifications = self.settings.get("notifications", {})
 
-        if not notifications.get(
-            "enabled",
-            True,
-        ):
+        if not notifications.get("enabled", True):
             return
 
         lesson = lesson_card.lesson_data
 
-        logger.info(
-            f"Notification debug: "
-            f"type={lesson.get('тип')!r}, "
-            f"description={lesson.get('описание')!r}, "
-            f"subject={lesson.get('предмет')!r}"
-        )
+        # log.info(
+        #     f"Notification debug: "
+        #     f"type={lesson.get('тип')!r}, "
+        #     f"description={lesson.get('описание')!r}, "
+        #     f"subject={lesson.get('предмет')!r}"
+        # )
 
-        notification_type = self.get_notification_type(
-            lesson
-        )
+        notification_type = self.get_notification_type(lesson)
 
         if notification_type is None:
             return
         
         if seconds_until <= 0:
-            if not notifications.get(
-                notification_type,
-                False,
-            ):
+            if not notifications.get(notification_type, False):
                 return
 
-            notification_id = (
-                f"{lesson.get('id')}_start"
-            )
+            notification_id = (f"{lesson.get('id')}_start")
 
             if notification_id not in self.sent_notifications:
-                self.sent_notifications.add(
-                    notification_id
-                )
+                self.sent_notifications.add(notification_id)
 
-                self._send_start_notification(
-                    lesson
-                )
+                self._send_start_notification(lesson)
 
             return
 
@@ -144,12 +123,12 @@ class NotificationManager:
 
             self.settings_mtime = mtime
 
-            logger.info(
+            log.info(
                 "Application settings reloaded"
             )
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to reload application settings: {error}"
             )
 
@@ -163,7 +142,7 @@ class NotificationManager:
                 self.settings = json.load(file)
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to load application settings: {error}"
             )
 
@@ -245,7 +224,7 @@ class NotificationManager:
             "Занятие",
         )
 
-        logger.info(
+        log.info(
             f"Sending {notification_type} notification "
             f"for lesson '{subject}' "
             f"({minutes} minutes in advance)"

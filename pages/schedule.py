@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from pages.add_event import AddEventDialog
 from engine.notifications import NotificationManager
 from engine.open_ktalk import open_ktalk
-from logger import logger
+from logger import logger as log
 
 
 SCHEDULE_FILE = "./data/schedule.json"
@@ -344,7 +344,7 @@ class SchedulePage(QWidget):
                         indent=4,
                     )
 
-                logger.info(
+                log.info(
                     f"Removed {len(events) - len(cleaned_events)} expired manual events"
                 )
 
@@ -352,14 +352,14 @@ class SchedulePage(QWidget):
             pass
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to clean manual events: {error}"
             )
 
     def open_add_event_dialog(self):
         dialog = AddEventDialog(self)
 
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.accepted:
             return
 
         event = dialog.get_event()
@@ -394,7 +394,7 @@ class SchedulePage(QWidget):
                 indent=4,
             )
 
-        logger.info(
+        log.info(
             "Manual event added successfully"
         )
 
@@ -439,7 +439,7 @@ class SchedulePage(QWidget):
                 schedule = json.load(file)
 
         except Exception as error:
-            logger.error(
+            log.error(
                 f"Failed to load schedule: {error}"
             )
 
@@ -449,7 +449,7 @@ class SchedulePage(QWidget):
             self.content_layout.addWidget(error_label)
             return
 
-        logger.info(
+        log.info(
             f"Loaded {len(schedule)} schedule events"
         )
 
@@ -459,7 +459,7 @@ class SchedulePage(QWidget):
         schedule.extend(manual_events)
 
         if manual_events:
-            logger.info(
+            log.info(
                 f"Loaded {len(manual_events)} manual events"
             )
 
