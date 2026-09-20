@@ -359,7 +359,7 @@ class SchedulePage(QWidget):
     def open_add_event_dialog(self):
         dialog = AddEventDialog(self)
 
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.accepted:
             return
 
         event = dialog.get_event()
