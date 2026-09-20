@@ -6,7 +6,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QPlainTextEdit,
 )
-
+from PySide6.QtGui import QTextCursor
+from logger import logger as log
 
 LOG_FILE = "./data/logs/app.log"
 
@@ -99,6 +100,8 @@ class LogsPage(QWidget):
         if not os.path.exists(LOG_FILE):
             return
 
+        log.info(f"Checking for upates")
+
         try:
             with open(
                 LOG_FILE,
@@ -119,9 +122,7 @@ class LogsPage(QWidget):
                 >= scrollbar.maximum() - 10
             )
 
-            self.logs.moveCursor(
-                self.logs.textCursor().End
-            )
+            self.logs.moveCursor(QTextCursor.MoveOperation.End)
 
             self.logs.insertPlainText(new_content)
 

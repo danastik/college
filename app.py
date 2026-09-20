@@ -18,7 +18,7 @@ from auth import AuthDialog
 from pages.schedule import SchedulePage
 from pages.settings import SettingsPage
 from pages.logs import LogsPage
-from logger import logger
+from logger import logger as log
 
 
 class ScheduleUpdateNotifier(QObject):
@@ -52,11 +52,11 @@ class AppWindow(QWidget):
         ]
 
         for button in self.buttons:
-            button.setCursor(Qt.PointingHandCursor)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.setMinimumHeight(50)
             button.setSizePolicy(
-                QSizePolicy.Expanding,
-                QSizePolicy.Fixed,
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
             )
 
             tabs_layout.addWidget(button)
@@ -85,13 +85,16 @@ class AppWindow(QWidget):
         self.logs_button.clicked.connect(
             lambda: self.change_page(2)
         )
+        self.logs_button.clicked.connect(
+            self.logs_page.check_for_updates
+        )
 
         main_layout.addLayout(tabs_layout)
         main_layout.addWidget(self.stack)
 
         self.change_page(0)
 
-        logger.info("Main window initialized")
+        log.info("Main window initialized")
 
     def set_dark_title_bar(self):
         hwnd = int(self.winId())
@@ -118,7 +121,7 @@ class AppWindow(QWidget):
 
 
 def run_app(notifier=None, settings=None):
-    logger.info("Initializing application interface")
+    log.info("Initializing application interface")
 
     app = QApplication([])
 
@@ -277,8 +280,8 @@ def run_app(notifier=None, settings=None):
     if not os.path.exists(auth_file):
         dialog = AuthDialog()
 
-        if dialog.exec() != QDialog.Accepted:
-            logger.info(
+        if dialog.exec() != QDialog.accepted:
+            log.info(
                 "Authentication setup cancelled"
             )
             return
@@ -286,11 +289,11 @@ def run_app(notifier=None, settings=None):
     window = AppWindow(notifier, settings)
     window.show()
 
-    logger.info("Application interface started")
+    log.info("Application interface started")
 
     app.exec()
 
-    logger.info("Application closed")
+    log.info("Application closed")
 
 
 if __name__ == "__main__":
