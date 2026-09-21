@@ -142,8 +142,8 @@ class AddEventDialog(QDialog):
 
         self.date_edit = QLineEdit()
         self.date_edit.setPlaceholderText(
-            datetime.now().strftime("%d.%m.%Y")
-        )
+            datetime.now().strftime("%d.%m.%Y"))
+        self.date_edit.textChanged.connect(self.format_date)
 
         date_layout.addWidget(date_label)
         date_layout.addWidget(self.date_edit)
@@ -156,6 +156,7 @@ class AddEventDialog(QDialog):
 
         self.time_edit = QLineEdit()
         self.time_edit.setPlaceholderText("14:30")
+        self.time_edit.textChanged.connect(self.format_time)
 
         time_layout.addWidget(time_label)
         time_layout.addWidget(self.time_edit)
@@ -211,6 +212,53 @@ class AddEventDialog(QDialog):
         main_layout.addLayout(buttons_layout)
 
         self.subject_edit.setFocus()
+
+    def format_date(self, text):
+        if getattr(self, "_formatting_date", False):
+            return
+
+        digits = "".join(char for char in text if char.isdigit())[:8]
+        result = ""
+
+        for i, digit in enumerate(digits):
+            if i in (2, 4):
+                result += "."
+            result += digit
+
+        previous_length = getattr(self, "_date_length", 0)
+
+        if len(result) > previous_length and len(digits) in (2, 4):
+            result += "."
+
+        self._date_length = len(result)
+
+        self._formatting_date = True
+        self.date_edit.setText(result)
+        self._formatting_date = False
+
+
+    def format_time(self, text):
+        if getattr(self, "_formatting_time", False):
+            return
+
+        digits = "".join(char for char in text if char.isdigit())[:4]
+        result = ""
+
+        for i, digit in enumerate(digits):
+            if i == 2:
+                result += ":"
+            result += digit
+
+        previous_length = getattr(self, "_time_length", 0)
+
+        if len(result) > previous_length and len(digits) == 2:
+            result += ":"
+
+        self._time_length = len(result)
+
+        self._formatting_time = True
+        self.time_edit.setText(result)
+        self._formatting_time = False
 
     def set_dark_title_bar(self):
         hwnd = int(self.winId())

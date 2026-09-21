@@ -1,14 +1,70 @@
 import json
+import os
+import shutil
+import subprocess
+import winreg
 
 from playwright.sync_api import sync_playwright, TimeoutError
 
 from logger import logger as log
 
-CHROMIUM_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-
 TARGET_URL = "https://app.rameevcollege.ru/study/schedule"
 AUTH_FILE = "./data/auth.json"
 
+def find_chrome():
+    paths = [
+        os.path.expandvars(r"%PROGRAMFILES%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%PROGRAMFILES(X86)%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%USERPROFILE%\AppData\Local\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%USERPROFILE%\AppData\Local\Google\Chrome SxS\Application\chrome.exe"),
+    ]
+
+    # Проверяем PATH
+    chrome = shutil.which("chrome.exe")
+    if chrome:
+        paths.insert(0, chrome)
+
+    # Проверяем через where.exe
+    try:
+        result = subprocess.run(
+            ["where", "chrome"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+
+        for path in result.stdout.splitlines():
+            path = path.strip()
+            if os.path.isfile(path):
+                paths.insert(0, path)
+    except Exception:
+        pass
+
+    # Проверяем реестр Windows
+    registry_keys = [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"),
+        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"),
+    ]
+
+    for root, key in registry_keys:
+        try:
+            with winreg.OpenKey(root, key) as registry:
+                path, _ = winreg.QueryValueEx(registry, None)
+
+                if os.path.isfile(path):
+                    paths.insert(0, path)
+        except (FileNotFoundError, OSError):
+            pass
+
+    # Проверяем все найденные варианты
+    for path in paths:
+        if path and os.path.isfile(path):
+            log.info(f"Chrome found: {path}")
+            return path
+
+    return None
 
 def get_token():
     log.info("Starting authentication process")
@@ -27,11 +83,17 @@ def get_token():
         raise
 
     with sync_playwright() as p:
-        while True:
+        chrome_path = find_chrome()
+
+        if chrome_path:
+            log.info("Using installed Google Chrome")
             browser = p.chromium.launch(
                 headless=True,
-                executable_path=CHROMIUM_PATH,
+                executable_path=chrome_path,
             )
+        else:
+            log.warning("Google Chrome was not found, using Playwright Chromium")
+            browser = p.chromium.launch(headless=True)
 
             page = browser.new_page()
 
