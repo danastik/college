@@ -64,6 +64,10 @@ class AddEventDialog(QDialog):
             QSpinBox:focus {
                 border: 1px solid #555555;
             }
+                           
+            QLineEdit[invalid="true"] {
+                border: 1px solid #f1c75b;
+            }
 
             QPushButton {
                 background-color: #303030;
@@ -98,6 +102,11 @@ class AddEventDialog(QDialog):
 
             QPushButton#addButton:pressed {
                 background-color: #d9b34f;
+            }
+                           
+            QPushButton#addButton:disabled {
+                background-color: #555555;
+                color: #888888;
             }
         """)
 
@@ -200,40 +209,83 @@ class AddEventDialog(QDialog):
         cancel_button.setCursor(Qt.PointingHandCursor)
         cancel_button.clicked.connect(self.reject)
 
-        add_button = QPushButton("Добавить")
-        add_button.setObjectName("addButton")
-        add_button.setCursor(Qt.PointingHandCursor)
-        add_button.clicked.connect(self.accept)
+        self.add_button = QPushButton("Добавить")
+        self.add_button.setObjectName("addButton")
+        self.add_button.setCursor(Qt.PointingHandCursor)
+        self.add_button.clicked.connect(self.on_add_clicked)
 
         buttons_layout.addStretch()
         buttons_layout.addWidget(cancel_button)
-        buttons_layout.addWidget(add_button)
+        buttons_layout.addWidget(self.add_button)
 
         main_layout.addLayout(buttons_layout)
 
+        self.subject_edit.textChanged.connect(self.validate_fields)
+        self.date_edit.textChanged.connect(self.validate_fields)
+        self.time_edit.textChanged.connect(self.validate_fields)
+
+        self.validate_fields()
+
         self.subject_edit.setFocus()
+
+    def on_add_clicked(self):
+        logger.info("Add button clicked")
+        logger.info(f"Date: {self.date_edit.text()}")
+        logger.info(f"Time: {self.time_edit.text()}")
+        logger.info(f"Subject: {self.subject_edit.text()}")
+
+        self.accept()
+
+    def validate_fields(self):
+        subject_valid = bool(self.subject_edit.text().strip())
+
+        date_text = self.date_edit.text().strip()
+        time_text = self.time_edit.text().strip()
+
+        try:
+            datetime.strptime(date_text, "%d.%m.%Y")
+            date_valid = True
+        except ValueError:
+            date_valid = False
+
+        try:
+            datetime.strptime(time_text, "%H:%M")
+            time_valid = True
+        except ValueError:
+            time_valid = False
+
+        for field, valid in (
+            (self.subject_edit, subject_valid),
+            (self.date_edit, date_valid),
+            (self.time_edit, time_valid),
+        ):
+            field.setProperty("invalid", not valid)
+            field.style().unpolish(field)
+            field.style().polish(field)
+
+        self.add_button.setEnabled(
+            subject_valid and date_valid and time_valid
+        )
 
     def format_date(self, text):
         if getattr(self, "_formatting_date", False):
             return
 
-        digits = "".join(char for char in text if char.isdigit())[:8]
-        result = ""
-
-        for i, digit in enumerate(digits):
-            if i in (2, 4):
-                result += "."
-            result += digit
-
         previous_length = getattr(self, "_date_length", 0)
 
-        if len(result) > previous_length and len(digits) in (2, 4):
-            result += "."
+        if len(text) > previous_length:
+            if len(text) == 2:
+                text += "."
+            elif len(text) == 5:
+                text += "." + str(datetime.now().year)
 
-        self._date_length = len(result)
+        text = text[:10]
+
+        self._date_length = len(text)
 
         self._formatting_date = True
-        self.date_edit.setText(result)
+        self.date_edit.setText(text)
+        self.date_edit.setCursorPosition(len(text))
         self._formatting_date = False
 
 

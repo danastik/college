@@ -5,3 +5,4 @@ data/logs/app.log
 .vscode
 __pycache__/
 data/
+data/manual_events.json
