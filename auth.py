@@ -43,7 +43,7 @@ class AuthDialog(QDialog):
 
         layout.setSpacing(10)
 
-        title = QLabel("Введите данные аккаунта")
+        title = QLabel("Введите данные аккаунта колледжа")
 
         email_input = QLineEdit()
         email_input.setPlaceholderText("Email")

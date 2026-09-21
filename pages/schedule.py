@@ -119,9 +119,7 @@ class LessonCard(QFrame):
 
             # Урок закончился
             if elapsed_seconds >= self.duration_minutes * 60:
-                self.remaining_label.setText(
-                    "Урок закончился"
-                )
+                self.remaining_label.setText("Урок закончился")
                 return
 
             # Урок идёт
@@ -312,11 +310,7 @@ class SchedulePage(QWidget):
 
     def clean_manual_events(self):
         try:
-            with open(
-                "manual_events.json",
-                "r",
-                encoding="utf-8",
-            ) as file:
+            with open("manual_events.json","r",encoding="utf-8",) as file:
                 events = json.load(file)
 
             today = datetime.now().date()
@@ -332,17 +326,9 @@ class SchedulePage(QWidget):
                     cleaned_events.append(event)
 
             if len(cleaned_events) != len(events):
-                with open(
-                    "manual_events.json",
-                    "w",
-                    encoding="utf-8",
+                with open("manual_events.json","w",encoding="utf-8",
                 ) as file:
-                    json.dump(
-                        cleaned_events,
-                        file,
-                        ensure_ascii=False,
-                        indent=4,
-                    )
+                    json.dump(cleaned_events,file,ensure_ascii=False,indent=4,)
 
                 log.info(
                     f"Removed {len(events) - len(cleaned_events)} expired manual events"
@@ -370,11 +356,7 @@ class SchedulePage(QWidget):
         event["id"] = f"manual_{uuid4().hex}"
 
         try:
-            with open(
-                MANUAL_EVENTS_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
+            with open(MANUAL_EVENTS_FILE,"r",encoding="utf-8",) as file:
                 events = json.load(file)
 
         except (FileNotFoundError, json.JSONDecodeError):
@@ -382,17 +364,8 @@ class SchedulePage(QWidget):
 
         events.append(event)
 
-        with open(
-            MANUAL_EVENTS_FILE,
-            "w",
-            encoding="utf-8",
-        ) as file:
-            json.dump(
-                events,
-                file,
-                ensure_ascii=False,
-                indent=4,
-            )
+        with open(MANUAL_EVENTS_FILE,"w",encoding="utf-8",) as file:
+            json.dump(events,file,ensure_ascii=False,indent=4,)
 
         log.info(
             "Manual event added successfully"
@@ -402,11 +375,7 @@ class SchedulePage(QWidget):
 
     def load_manual_events(self):
         try:
-            with open(
-                MANUAL_EVENTS_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
+            with open(MANUAL_EVENTS_FILE,"r",encoding="utf-8",) as file:
                 return json.load(file)
 
         except (FileNotFoundError, json.JSONDecodeError):
@@ -431,11 +400,7 @@ class SchedulePage(QWidget):
         self.clean_manual_events()
 
         try:
-            with open(
-                SCHEDULE_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
+            with open(SCHEDULE_FILE,"r",encoding="utf-8",) as file:
                 schedule = json.load(file)
 
         except Exception as error:

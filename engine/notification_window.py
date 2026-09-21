@@ -200,7 +200,7 @@ class NotificationWindow(QWidget):
 
         if self.start_notification:
             text = QLabel(
-                "началась!"
+                "начинается!"
             )
         else:
             text = QLabel(

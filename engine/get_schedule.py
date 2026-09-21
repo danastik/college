@@ -17,11 +17,7 @@ class TokenExpired(Exception):
 
 def get_token_from_auth():
     try:
-        with open(
-            AUTH_FILE,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        with open(AUTH_FILE,"r",encoding="utf-8",) as file:
             auth = json.load(file)
 
         token = auth["token"]
@@ -43,12 +39,7 @@ def get_events():
 
     now = datetime.now().astimezone()
 
-    start = now.replace(
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0,
-    )
+    start = now.replace(hour=0,minute=0,second=0,microsecond=0,)
 
     end = start + timedelta(days=7) - timedelta(milliseconds=1)
 

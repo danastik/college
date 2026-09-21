@@ -2,7 +2,7 @@
     "notifications": {
         "enabled": true,
         "lesson": true,
-        "practice": true
+        "practice": false
     },
     "notify_in_advance": [],
     "update_frequency": "30",

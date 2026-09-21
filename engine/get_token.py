@@ -14,11 +14,7 @@ def get_token():
     log.info("Starting authentication process")
 
     try:
-        with open(
-            AUTH_FILE,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        with open(AUTH_FILE,"r",encoding="utf-8",) as file:
             auth = json.load(file)
 
         email = auth["email"]
@@ -86,17 +82,8 @@ def get_token():
 
                 auth["token"] = token
 
-                with open(
-                    AUTH_FILE,
-                    "w",
-                    encoding="utf-8",
-                ) as file:
-                    json.dump(
-                        auth,
-                        file,
-                        ensure_ascii=False,
-                        indent=4,
-                    )
+                with open(AUTH_FILE,"w",encoding="utf-8",) as file:
+                    json.dump(auth,file,ensure_ascii=False,indent=4,)
 
                 log.info(
                     "Authentication token saved successfully"

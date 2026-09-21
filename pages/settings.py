@@ -32,29 +32,18 @@ class SettingsPage(QWidget):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
-                # =========================================================
         # Верхняя часть: Уведомления + kTalk
-        # =========================================================
-
         top_layout = QHBoxLayout()
         top_layout.setSpacing(15)
 
-        # =========================================================
         # Уведомления
-        # =========================================================
-
         notifications_frame = QFrame()
         notifications_frame.setObjectName("settingsFrame")
 
         notifications_layout = QVBoxLayout(
             notifications_frame
         )
-        notifications_layout.setContentsMargins(
-            15,
-            15,
-            15,
-            15,
-        )
+        notifications_layout.setContentsMargins(15,15,15,15,)
         notifications_layout.setSpacing(12)
 
         notifications_title = QLabel(
@@ -83,10 +72,7 @@ class SettingsPage(QWidget):
         )
         notifications_layout.addStretch()
 
-        # =========================================================
         # kTalk
-        # =========================================================
-
         ktalk_frame = QFrame()
         ktalk_frame.setObjectName(
             "settingsFrame"
@@ -95,12 +81,7 @@ class SettingsPage(QWidget):
         ktalk_layout = QVBoxLayout(
             ktalk_frame
         )
-        ktalk_layout.setContentsMargins(
-            15,
-            15,
-            15,
-            15,
-        )
+        ktalk_layout.setContentsMargins(15,15,15,15,)
         ktalk_layout.setSpacing(12)
 
         ktalk_title = QLabel(
@@ -129,10 +110,7 @@ class SettingsPage(QWidget):
             ktalk_frame
         )
 
-        # =========================================================
         # Дополнительные настройки уведомлений
-        # =========================================================
-
         notification_options_frame = QFrame()
         notification_options_frame.setObjectName(
             "settingsFrame"
@@ -141,12 +119,7 @@ class SettingsPage(QWidget):
         notification_options_layout = QHBoxLayout(
             notification_options_frame
         )
-        notification_options_layout.setContentsMargins(
-            15,
-            15,
-            15,
-            15,
-        )
+        notification_options_layout.setContentsMargins(15,15,15,15,)
         notification_options_layout.setSpacing(15)
 
         # Уведомлять заранее
@@ -201,10 +174,7 @@ class SettingsPage(QWidget):
         )
         notification_options_layout.addStretch()
 
-        # =========================================================
         # Расписание
-        # =========================================================
-
         schedule_frame = QFrame()
         schedule_frame.setObjectName(
             "settingsFrame"
@@ -213,12 +183,7 @@ class SettingsPage(QWidget):
         schedule_layout = QVBoxLayout(
             schedule_frame
         )
-        schedule_layout.setContentsMargins(
-            15,
-            15,
-            15,
-            15,
-        )
+        schedule_layout.setContentsMargins(15,15,15,15,)
         schedule_layout.setSpacing(12)
 
         schedule_title = QLabel(
@@ -265,10 +230,7 @@ class SettingsPage(QWidget):
         )
         schedule_layout.addStretch()
 
-        # =========================================================
         # Кнопка сохранения
-        # =========================================================
-
         save_button = QPushButton(
             "Сохранить"
         )
@@ -283,10 +245,7 @@ class SettingsPage(QWidget):
             self.save_settings
         )
 
-        # =========================================================
         # Добавляем всё на страницу
-        # =========================================================
-
         main_layout.addLayout(
             top_layout
         )
@@ -304,10 +263,6 @@ class SettingsPage(QWidget):
         main_layout.addWidget(
             save_button
         )
-
-        # =========================================================
-        # Стили
-        # =========================================================
 
         self.setStyleSheet(
             """
@@ -408,32 +363,18 @@ class SettingsPage(QWidget):
         )
 
     def load_settings(self):
-        notifications = self.settings.get(
-            "notifications",
-            {},
-        )
+        notifications = self.settings.get("notifications",{},)
 
         # Уведомления
         self.notifications_enabled.setChecked(
-            notifications.get(
-                "enabled",
-                True,
-            )
-        )
+            notifications.get("enabled",True,))
 
         # Практика
         self.practice_notifications.setChecked(
-            notifications.get(
-                "practice",
-                True,
-            )
-        )
+            notifications.get("practice",True,))
 
         # Уведомлять заранее
-        notify_in_advance = self.settings.get(
-            "notify_in_advance",
-            [10, 5],
-        )
+        notify_in_advance = self.settings.get("notify_in_advance",[10, 5],)
 
         if isinstance(
             notify_in_advance,
@@ -477,11 +418,7 @@ class SettingsPage(QWidget):
 
         # kTalk
         self.auto_open_ktalk.setChecked(
-            self.settings.get(
-                "auto_open_ktalk",
-                True,
-            )
-        )
+            self.settings.get("auto_open_ktalk",True,))
 
         # self.auto_join_ktalk.setChecked(
         #     self.settings.get(
@@ -495,10 +432,8 @@ class SettingsPage(QWidget):
         )
 
     def save_settings(self):
-        # =========================================================
-        # Уведомления
-        # =========================================================
 
+        # Уведомления
         notifications = self.settings.setdefault(
             "notifications",
             {},
@@ -512,10 +447,8 @@ class SettingsPage(QWidget):
             self.practice_notifications.isChecked()
         )
 
-        # =========================================================
-        # Уведомлять заранее
-        # =========================================================
 
+        # Уведомлять заранее
         text = self.notify_in_advance.text()
 
         values = []
@@ -540,26 +473,19 @@ class SettingsPage(QWidget):
 
         self.settings["notify_in_advance"] = values
 
-        # =========================================================
-        # Звук
-        # =========================================================
 
+        # Звук
         self.settings["notification_sound"] = (
             self.notification_sound.currentText()
         )
 
-        # =========================================================
-        # Расписание
-        # =========================================================
 
+        # Расписание
         self.settings["update_frequency"] = (
             self.update_frequency.text()
         )
 
-        # =========================================================
         # kTalk
-        # =========================================================
-
         self.settings["auto_open_ktalk"] = (
             self.auto_open_ktalk.isChecked()
         )
@@ -568,22 +494,10 @@ class SettingsPage(QWidget):
         #     self.auto_join_ktalk.isChecked()
         # )
 
-        # =========================================================
         # Сохранение settings.json
-        # =========================================================
-
         try:
-            with open(
-                SETTINGS_FILE,
-                "w",
-                encoding="utf-8",
-            ) as file:
-                json.dump(
-                    self.settings,
-                    file,
-                    ensure_ascii=False,
-                    indent=4,
-                )
+            with open(SETTINGS_FILE,"w",encoding="utf-8",) as file:
+                json.dump(self.settings,file,ensure_ascii=False,indent=4,)
 
             log.info(
                 "Application settings saved successfully"
