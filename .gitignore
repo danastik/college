@@ -6,4 +6,4 @@ data/logs/app.log
 __pycache__/
 data/
 data/manual_events.json
-data/manual_events.json
+data/schedule.json

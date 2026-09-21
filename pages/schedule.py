@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 import ctypes
 from ctypes import wintypes
@@ -351,42 +351,56 @@ class SchedulePage(QWidget):
 
         return None
 
-    def clean_manual_events(self):
-        try:
-            with open(MANUAL_EVENTS_FILE,"r",encoding="utf-8",) as file:
-                events = json.load(file)
+    def clean_expired_events(self):
+        now = datetime.now(timezone.utc)
+        files = [SCHEDULE_FILE, MANUAL_EVENTS_FILE]
+        removed_any = False
 
-            today = datetime.now().astimezone().date()
+        for file_path in files:
+            try:
+                with open(file_path, "r", encoding="utf-8") as file:
+                    events = json.load(file)
 
-            cleaned_events = []
+                cleaned_events = []
 
-            for event in events:
-                start_time = datetime.fromisoformat(
-                    event["начало"].replace("Z", "+00:00")
+                for event in events:
+                    start_time = datetime.fromisoformat(
+                        event["начало"].replace("Z", "+00:00")
+                    )
+
+                    duration = event.get("продолжительность", 45)
+                    end_time = start_time + timedelta(minutes=duration)
+                    delete_time = end_time + timedelta(minutes=15)
+
+                    if now < delete_time:
+                        cleaned_events.append(event)
+
+                removed = len(events) - len(cleaned_events)
+
+                if removed:
+                    with open(file_path, "w", encoding="utf-8") as file:
+                        json.dump(
+                            cleaned_events,
+                            file,
+                            ensure_ascii=False,
+                            indent=4,
+                        )
+
+                    removed_any = True
+
+                    log.info(
+                        f"Removed {removed} expired events from {file_path}"
+                    )
+
+            except FileNotFoundError:
+                pass
+
+            except Exception as error:
+                log.error(
+                    f"Failed to clean {file_path}: {error}"
                 )
 
-                if start_time.astimezone().date() >= today:
-                    cleaned_events.append(event)
-
-            if len(cleaned_events) != len(events):
-                with open(MANUAL_EVENTS_FILE,"w",encoding="utf-8",) as file:
-                    json.dump(cleaned_events,file,ensure_ascii=False,indent=4,)
-                log.info(
-                    f"Manual event saved to {MANUAL_EVENTS_FILE}"
-                )
-
-                log.info(
-                    f"Removed {len(events) - len(cleaned_events)} "
-                    "expired manual events"
-                )
-
-        except FileNotFoundError:
-            pass
-
-        except Exception as error:
-            log.error(
-                f"Failed to clean manual events: {error}"
-            )
+        return removed_any
 
     def open_add_event_dialog(self):
         dialog = AddEventDialog(self)
@@ -457,7 +471,7 @@ class SchedulePage(QWidget):
 
     def load_schedule(self):
         self.clear_schedule()
-        self.clean_manual_events()
+        self.clean_expired_events()
 
         try:
             with open(SCHEDULE_FILE,"r",encoding="utf-8",) as file:
@@ -719,6 +733,9 @@ class SchedulePage(QWidget):
             card.style().polish(card)
 
     def update_schedule(self):
+        if self.clean_expired_events():
+            self.reload_schedule()
+
         for card in self.cards:
             card.update_remaining()
             card.setVisible(True)
