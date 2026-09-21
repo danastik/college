@@ -6,10 +6,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QPlainTextEdit,
 )
-
+from logger import logger as log
 
 LOG_FILE = "./data/logs/app.log"
-
+MAX_LINES = 100
 
 class LogsPage(QWidget):
     def __init__(self):
@@ -64,31 +64,23 @@ class LogsPage(QWidget):
 
         layout.addWidget(self.logs)
 
-        self.last_position = 0
-
         self.load_logs()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_for_updates)
-        self.timer.start(500)
+        self.timer.start(1000)
 
     def load_logs(self):
         if not os.path.exists(LOG_FILE):
             self.logs.clear()
-            self.last_position = 0
             return
 
         try:
-            with open(
-                LOG_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
-                content = file.read()
+            with open(LOG_FILE, "r", encoding="utf-8", ) as file:
+                content = file.readlines()
 
-            self.logs.setPlainText(content)
-
-            self.last_position = len(content)
+            last_lines = content[-MAX_LINES:]
+            self.logs.setPlainText("".join(last_lines))
 
             self.scroll_to_bottom()
 
@@ -100,33 +92,19 @@ class LogsPage(QWidget):
             return
 
         try:
-            with open(
-                LOG_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
-                file.seek(self.last_position)
-                new_content = file.read()
-
-                if not new_content:
-                    return
-
-                self.last_position = file.tell()
+            with open(LOG_FILE, "r", encoding="utf-8", ) as file:
+                new_content = file.readlines()
 
             scrollbar = self.logs.verticalScrollBar()
-            at_bottom = (
-                scrollbar.value()
-                >= scrollbar.maximum() - 10
-            )
+            scroll_position = scrollbar.value()
+            at_bottom = (scrollbar.value() >= scrollbar.maximum()-1)
 
-            self.logs.moveCursor(
-                self.logs.textCursor().End
-            )
+            if not at_bottom: return
 
-            self.logs.insertPlainText(new_content)
+            last_lines = new_content[-MAX_LINES:]
+            self.logs.setPlainText("".join(last_lines))
 
-            if at_bottom:
-                self.scroll_to_bottom()
+            scrollbar.setValue(scroll_position)
 
         except Exception:
             pass

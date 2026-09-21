@@ -1,14 +1,14 @@
 import json
 import webbrowser
 
-from logger import logger
+from logger import logger as log
 
 
 SETTINGS_FILE = "./data/settings.json"
 
 
 def open_ktalk(lesson):
-    logger.info("KTalk open request received")
+    log.info("KTalk open request received")
 
     try:
         with open(
@@ -19,7 +19,7 @@ def open_ktalk(lesson):
             settings = json.load(file)
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to load settings for KTalk: {error}"
         )
         return
@@ -28,7 +28,7 @@ def open_ktalk(lesson):
         "auto_open_ktalk",
         False,
     ):
-        logger.info(
+        log.info(
             "Automatic KTalk opening is disabled"
         )
         return
@@ -36,21 +36,21 @@ def open_ktalk(lesson):
     link = lesson.get("ссылка")
 
     if not link:
-        logger.warning(
+        log.warning(
             "KTalk link is missing for the lesson"
         )
         return
 
-    logger.info("Opening KTalk link")
+    log.info("Opening KTalk link")
 
     try:
         result = webbrowser.open(link)
 
-        logger.info(
+        log.info(
             f"KTalk link open request completed: {result}"
         )
 
     except Exception as error:
-        logger.error(
+        log.error(
             f"Failed to open KTalk link: {error}"
         )
