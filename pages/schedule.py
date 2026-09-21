@@ -1,6 +1,8 @@
 import json
 from datetime import datetime, timezone
 from uuid import uuid4
+import ctypes
+from ctypes import wintypes
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
@@ -12,6 +14,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QPushButton,
     QDialog,
+    QMessageBox,
 )
 
 from pages.add_event import AddEventDialog
@@ -167,6 +170,18 @@ class LessonCard(QFrame):
             self.remaining_label.setText(text)
             return
 
+def set_dark_title_bar(window):
+    hwnd = int(window.winId())
+
+    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    value = ctypes.c_int(1)
+
+    ctypes.windll.dwmapi.DwmSetWindowAttribute(
+        wintypes.HWND(hwnd),
+        DWMWA_USE_IMMERSIVE_DARK_MODE,
+        ctypes.byref(value),
+        ctypes.sizeof(value),
+    )
 
 class SchedulePage(QWidget):
     def __init__(self, settings):
@@ -286,6 +301,34 @@ class SchedulePage(QWidget):
         self.timer.timeout.connect(self.update_schedule)
         self.timer.start(1000)
 
+    def has_event_conflict(self, new_event):
+        new_start = datetime.fromisoformat(
+            new_event["начало"].replace("Z", "+00:00")
+        )
+        new_end = new_start.timestamp() + new_event["продолжительность"] * 60
+
+        try:
+            with open(SCHEDULE_FILE, "r", encoding="utf-8") as file:
+                schedule = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            schedule = []
+
+        schedule.extend(self.load_manual_events())
+
+        for event in schedule:
+            event_start = datetime.fromisoformat(
+                event["начало"].replace("Z", "+00:00")
+            )
+            event_end = event_start.timestamp() + event.get("продолжительность", 45) * 60
+
+            if (
+                new_start.timestamp() < event_end
+                and new_end > event_start.timestamp()
+            ):
+                return event
+
+        return None
+
     def get_current_lesson(self):
         now = datetime.now(timezone.utc)
 
@@ -352,6 +395,27 @@ class SchedulePage(QWidget):
             return
 
         event = dialog.get_event()
+
+        conflict = self.has_event_conflict(event)
+
+        if conflict:
+            log.warning(
+                f"Manual event conflicts with existing event: "
+                f"{conflict.get('предмет', 'Без названия')}"
+            )
+
+            message_box = QMessageBox(self)
+            message_box.setIcon(QMessageBox.Warning)
+            message_box.setWindowTitle("Пересечение событий")
+            message_box.setText(
+                "Создаваемое событие пересекается с уже существующим."
+            )
+
+            set_dark_title_bar(message_box)
+
+            message_box.exec()
+            return
+        
         event["id"] = f"manual_{uuid4().hex}"
 
         try:
