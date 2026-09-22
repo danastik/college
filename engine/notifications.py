@@ -37,6 +37,10 @@ class NotificationManager:
             0,
             notification_sound,
             start_notification=True,
+            practice=(
+                self.get_notification_type(lesson)
+                == "practice"
+            ),
         )
 
         self.windows.append(window)
@@ -88,6 +92,9 @@ class NotificationManager:
             notification_type,
             False,
         ):
+            return
+
+        if notification_type == "practice":
             return
 
         notify_in_advance = self.settings.get(

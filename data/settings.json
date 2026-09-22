@@ -2,10 +2,10 @@
     "notifications": {
         "enabled": true,
         "lesson": true,
-        "practice": false
+        "practice": true
     },
     "notify_in_advance": [
-        5
+        1
     ],
     "update_frequency": "60",
     "auto_open_ktalk": true,

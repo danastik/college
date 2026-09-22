@@ -757,10 +757,12 @@ class SchedulePage(QWidget):
         self.update_next_lesson()
 
         current_lesson = self.get_current_lesson()
+        next_lesson = self.get_next_lesson()
 
+        now = datetime.now(timezone.utc)
+
+        # Текущий урок
         if current_lesson:
-            now = datetime.now(timezone.utc)
-
             seconds_until = (
                 current_lesson.start_time - now
             ).total_seconds()
@@ -775,19 +777,15 @@ class SchedulePage(QWidget):
 
             if lesson_id not in self.started_lessons:
                 self.started_lessons.add(lesson_id)
-
                 open_ktalk(lesson)
-        else:
-            next_lesson = self.get_next_lesson()
 
-            if next_lesson:
-                now = datetime.now(timezone.utc)
+        # Следующий урок
+        if next_lesson:
+            seconds_until = (
+                next_lesson.start_time - now
+            ).total_seconds()
 
-                seconds_until = (
-                    next_lesson.start_time - now
-                ).total_seconds()
-
-                self.notifications.update(
-                    next_lesson,
-                    seconds_until,
-                )
+            self.notifications.update(
+                next_lesson,
+                seconds_until,
+            )
