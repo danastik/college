@@ -410,6 +410,19 @@ class SchedulePage(QWidget):
 
         event = dialog.get_event()
 
+        event_start = datetime.fromisoformat(
+            event["начало"].replace("Z", "+00:00")
+        )
+
+        if event_start < datetime.now(timezone.utc):
+            message_box = QMessageBox(self)
+            message_box.setIcon(QMessageBox.Warning)
+            message_box.setWindowTitle("Событие в прошлом")
+            message_box.setText("Нельзя создать событие в прошлом.")
+            set_dark_title_bar(message_box)
+            message_box.exec()
+            return
+
         conflict = self.has_event_conflict(event)
 
         if conflict:

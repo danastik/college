@@ -4,8 +4,10 @@
         "lesson": true,
         "practice": false
     },
-    "notify_in_advance": [],
-    "update_frequency": "30",
+    "notify_in_advance": [
+        5
+    ],
+    "update_frequency": "60",
     "auto_open_ktalk": true,
     "auto_join_ktalk": false,
     "notification_sound": "notification2.wav"
