@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QDialog,
     QMessageBox,
+    QToolButton
 )
 
 from pages.add_event import AddEventDialog
@@ -78,6 +79,26 @@ class LessonCard(QFrame):
         self.subject_label = QLabel(self.subject)
         self.subject_label.setObjectName("lessonSubject")
 
+        self.delete_button = None
+
+        if lesson.get("id", "").startswith("manual_"):
+            self.delete_button = QToolButton()
+            self.delete_button.setText("🗑")
+            self.delete_button.setObjectName("eventMenuButton")
+            self.delete_button.setFixedSize(30, 30)
+            self.delete_button.setCursor(Qt.PointingHandCursor)
+            self.delete_button.setStyleSheet("""
+                QToolButton {
+                    color: #cccccc;
+                    background: transparent;
+                    border: none;
+                    font-family: "Segoe UI";
+                    font-size: 14px;
+                    font-weight: normal;
+                    padding: 0;
+                }
+            """)
+
         # Оставшееся / прошедшее время
         self.remaining_label = QLabel()
         self.remaining_label.setObjectName("lessonRemaining")
@@ -85,6 +106,9 @@ class LessonCard(QFrame):
         layout.addWidget(self.type_indicator)
         layout.addWidget(self.time_label)
         layout.addWidget(self.subject_label)
+
+        if self.delete_button:
+            layout.addWidget(self.delete_button)
 
         layout.addStretch()
 
@@ -460,6 +484,48 @@ class SchedulePage(QWidget):
 
         self.reload_schedule()
 
+    def delete_manual_event(self, event):
+        message_box = QMessageBox(self)
+        message_box.setIcon(QMessageBox.Question)
+        message_box.setWindowTitle("Удаление события")
+        message_box.setText("Вы уверены, что хотите удалить это событие?")
+        message_box.setStandardButtons(
+            QMessageBox.Yes | QMessageBox.No
+        )
+        message_box.setDefaultButton(QMessageBox.No)
+
+        set_dark_title_bar(message_box)
+
+        if message_box.exec() != QMessageBox.Yes:
+            return
+
+        event_id = event.get("id")
+
+        try:
+            with open(MANUAL_EVENTS_FILE, "r", encoding="utf-8") as file:
+                events = json.load(file)
+
+            events = [
+                saved_event
+                for saved_event in events
+                if saved_event.get("id") != event_id
+            ]
+
+            with open(MANUAL_EVENTS_FILE, "w", encoding="utf-8") as file:
+                json.dump(
+                    events,
+                    file,
+                    ensure_ascii=False,
+                    indent=4,
+                )
+
+            log.info(f"Manual event deleted: {event_id}")
+
+            self.reload_schedule()
+
+        except Exception as error:
+            log.error(f"Failed to delete manual event: {error}")
+
     def load_manual_events(self):
         try:
             with open(MANUAL_EVENTS_FILE,"r",encoding="utf-8",) as file:
@@ -562,6 +628,11 @@ class SchedulePage(QWidget):
 
             # Сохраняем исходные данные
             card.lesson_data = lesson
+
+            if card.delete_button:
+                card.delete_button.clicked.connect(
+                    lambda checked=False, event=lesson: self.delete_manual_event(event)
+                )
 
             self.cards.append(card)
             self.content_layout.addWidget(card)
